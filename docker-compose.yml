@@ -1,0 +1,61 @@
+services:
+  postgresql:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: harness
+      POSTGRES_PASSWORD: harness
+      POSTGRES_DB: harness
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: harness
+      POSTGRES_PWD: harness
+      POSTGRES_SEEDS: postgresql
+    ports:
+      - "7233:7233"
+    depends_on:
+      - postgresql
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "8233:8080"
+    depends_on:
+      - temporal
+
+  worker:
+    build: .
+    command: python -m agent_harness.workers.dce
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      TEMPORAL_ADDRESS: temporal:7233
+      STORAGE_ROOT: /data
+    depends_on:
+      - temporal
+    volumes:
+      - harness-data:/data
+    restart: unless-stopped
+
+  gateway:
+    build: .
+    command: python -m agent_harness.gateway
+    ports:
+      - "8000:8000"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    depends_on:
+      - temporal
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  harness-data:

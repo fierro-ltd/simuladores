@@ -1,0 +1,106 @@
+# ============================================================
+# Agent Harness — Production Docker Compose
+# ============================================================
+# Deploy on GCE VM with:
+#   docker compose -f infra/docker-compose.prod.yml up -d
+#
+# Prerequisites:
+#   - Copy .env from infra/.env.example and fill in values
+#   - ADC credentials at ~/.config/gcloud/application_default_credentials.json
+#   - DCE Backend accessible (same VM or network)
+# ============================================================
+
+services:
+  # --- Infrastructure ---
+  postgresql:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-harness}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-harness}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-harness}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-harness}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: postgresql
+    ports:
+      - "127.0.0.1:7233:7233"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    restart: always
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "127.0.0.1:8233:8080"
+    depends_on:
+      - temporal
+    restart: always
+
+  # --- Application ---
+  # Gateway is intentionally exposed for external API clients.
+  # For internal-only access, change to "127.0.0.1:${GATEWAY_PORT:-8000}:8000"
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    command: ["agent_harness.gateway"]
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      STORAGE_ROOT: /data
+      GATEWAY_API_KEYS: ${GATEWAY_API_KEYS}
+      GATEWAY_RATE_LIMIT_MAX: ${GATEWAY_RATE_LIMIT_MAX:-100}
+      GATEWAY_RATE_LIMIT_WINDOW: ${GATEWAY_RATE_LIMIT_WINDOW:-60}
+    volumes:
+      - harness-data:/data
+      - ${ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/tmp/adc.json:ro
+    depends_on:
+      - temporal
+    restart: always
+
+  worker-dce:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    command: ["agent_harness.workers.dce"]
+    environment:
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT}
+      VERTEX_REGION: ${VERTEX_REGION:-europe-west1}
+      TEMPORAL_ADDRESS: temporal:7233
+      STORAGE_ROOT: /data
+      DCE_BACKEND_URL: ${DCE_BACKEND_URL}
+    volumes:
+      - harness-data:/data
+      - ${ADC_PATH:-~/.config/gcloud/application_default_credentials.json}:/tmp/adc.json:ro
+    depends_on:
+      - temporal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+volumes:
+  pgdata:
+    driver: local
+  harness-data:
+    driver: local
