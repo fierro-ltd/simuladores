@@ -2,7 +2,7 @@
 
 Phase 0: Intake (handled by gateway before workflow starts)
 Phase 1: Santos writes plan -> PLAN.md
-Phase 2: Medina investigates (no PDF for IDP — pass empty path)
+Phase 2: Medina investigates document at document_path
 Phase 3: Lamponne executes via discover_api/execute_api
 Phase 4: Santos QA review -> qa_report.json
 Phase 5: Ravenna synthesizes -> structured_result.json
@@ -17,6 +17,8 @@ from datetime import timedelta
 from temporalio import workflow
 
 with workflow.unsafe.imports_passed_through():
+    import os
+
     from agent_harness.activities.planner import PlannerInput, PlannerOutput
     from agent_harness.activities.agent_loop import AgentLoopInput, AgentLoopOutput
     from agent_harness.activities.investigator import InvestigatorInput, InvestigatorOutput
@@ -51,7 +53,7 @@ class IdpOperativoWorkflow:
 
     Phase 0: Intake (gateway submits workflow)
     Phase 1: Santos writes plan
-    Phase 2: Medina investigates (no PDF — IDP is product-description-driven)
+    Phase 2: Medina investigates document at document_path
     Phase 3: Lamponne executes
     Phase 4: Santos QA review (compare input vs output)
     Phase 5: Ravenna synthesizes (assemble structured_result + QA summary)
@@ -68,7 +70,7 @@ class IdpOperativoWorkflow:
         return PlannerInput(
             operativo_id=operativo_id,
             domain="idp",
-            pdf_description=f"IDP request: {input.product_description}",
+            pdf_description=f"Document: {input.document_path}, Plugin: {input.plugin_id}",
         )
 
     def build_investigate_input(
@@ -76,14 +78,14 @@ class IdpOperativoWorkflow:
     ) -> InvestigatorInput:
         """Phase 2: Build input for Medina investigation activity.
 
-        IDP has no document_path — pass empty strings since there is
-        no PDF to investigate. Medina will perform a lightweight scan.
+        IDP now has a document to investigate. Pass the document_path
+        and extract the filename for Medina's investigation.
         """
         return InvestigatorInput(
             operativo_id=operativo_id,
             domain="idp",
-            pdf_path="",
-            pdf_filename="",
+            pdf_path=input.document_path,
+            pdf_filename=os.path.basename(input.document_path),
         )
 
     def build_execute_input(
@@ -170,7 +172,7 @@ class IdpOperativoWorkflow:
         )
         progress_entries.append(f"Phase 1 (Plan): {plan_output.phase_result}")
 
-        # Phase 2: Medina investigates (lightweight — no PDF for IDP)
+        # Phase 2: Medina investigates document
         investigate_input = self.build_investigate_input(operativo_id, input)
         investigate_output: InvestigatorOutput = await workflow.execute_activity(
             "medina_investigate",
@@ -260,7 +262,7 @@ class IdpOperativoWorkflow:
             structured_result={
                 "response": synthesize_output.structured_result_json,
             },
-            test_plan_url=synthesize_output.report_url,
+            extraction_job_id=operativo_id,
             qa_summary=qa_output.qa_report_json,
         )
 

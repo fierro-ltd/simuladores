@@ -32,9 +32,9 @@ class TestIdpWorkflowConfig:
 class TestIdpWorkflow:
     def _make_input(self):
         return IdpOperativoInput(
-            product_description="Children's toy robot",
+            document_path="/data/uploads/invoice-001.pdf",
+            plugin_id="invoices",
             caller_id="user-1",
-            target_markets=["US", "EU"],
         )
 
     def test_build_plan_input(self):
@@ -44,7 +44,8 @@ class TestIdpWorkflow:
         assert isinstance(plan_input, PlannerInput)
         assert plan_input.operativo_id == "nav-123"
         assert plan_input.domain == "idp"
-        assert "Children's toy robot" in plan_input.pdf_description
+        assert "invoice-001.pdf" in plan_input.pdf_description
+        assert "invoices" in plan_input.pdf_description
 
     def test_build_execute_input(self):
         wf = IdpWorkflow()
@@ -73,11 +74,28 @@ class TestIdpWorkflow:
         exec_input = wf.build_execute_input("nav-1", "{}")
         assert exec_input.max_turns == 3
 
-    def test_build_investigate_input_empty_paths(self):
-        """IDP has no PDF — investigate input should have empty paths."""
+    def test_build_investigate_input_has_document_path(self):
+        """IDP now has a document — investigate input should have the document path."""
         wf = IdpWorkflow()
         inp = self._make_input()
         inv_input = wf.build_investigate_input("nav-123", inp)
         assert inv_input.domain == "idp"
-        assert inv_input.pdf_path == ""
-        assert inv_input.pdf_filename == ""
+        assert inv_input.pdf_path == "/data/uploads/invoice-001.pdf"
+        assert inv_input.pdf_filename == "invoice-001.pdf"
+
+    def test_build_plan_input_uses_document_path_and_plugin_id(self):
+        """Plan input description should reference document_path and plugin_id."""
+        wf = IdpWorkflow()
+        inp = self._make_input()
+        plan_input = wf.build_plan_input("nav-456", inp)
+        assert "Document:" in plan_input.pdf_description
+        assert "/data/uploads/invoice-001.pdf" in plan_input.pdf_description
+        assert "Plugin: invoices" in plan_input.pdf_description
+
+    def test_build_output_has_extraction_job_id(self):
+        """build_output should produce output without test_plan_url."""
+        wf = IdpWorkflow()
+        output = wf.build_output("nav-789", "Extraction complete.")
+        assert output.operativo_id == "nav-789"
+        assert output.extraction_job_id is None  # build_output doesn't set it
+        assert not hasattr(output, "test_plan_url")
