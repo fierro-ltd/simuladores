@@ -138,14 +138,15 @@ def test_create_idp_operativo_valid(client: TestClient):
         response = client.post(
             "/operativo/idp",
             json={
-                "product_description": "LED light bulb",
+                "document_path": "/tmp/invoice.pdf",
+                "plugin_id": "invoices",
                 "caller_id": "user-123",
             },
         )
 
     assert response.status_code == 201
     data = response.json()
-    assert data["operativo_id"].startswith("nav-")
+    assert data["operativo_id"].startswith("idp-")
     assert data["status"] == "PENDING"
     assert data["task_queue"] == "nav-operativo"
 
@@ -159,17 +160,18 @@ def test_create_idp_operativo_missing_fields(client: TestClient):
     assert response.status_code == 422
 
 
-def test_create_idp_operativo_empty_description(client: TestClient):
-    """POST /operativo/idp with empty product_description returns 400."""
+def test_create_idp_operativo_empty_document_path(client: TestClient):
+    """POST /operativo/idp with empty document_path returns 400."""
     response = client.post(
         "/operativo/idp",
         json={
-            "product_description": "",
+            "document_path": "",
+            "plugin_id": "invoices",
             "caller_id": "user-123",
         },
     )
     assert response.status_code == 400
-    assert "product_description" in response.json()["detail"]
+    assert "document_path" in response.json()["detail"]
 
 
 # ---------------------------------------------------------------------------

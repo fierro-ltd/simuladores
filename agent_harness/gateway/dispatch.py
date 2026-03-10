@@ -121,10 +121,9 @@ def dispatch_has_operativo(
 
 
 def dispatch_idp_operativo(
-    product_description: str,
+    document_path: str,
+    plugin_id: str,
     caller_id: str,
-    target_markets: list[str] | None = None,
-    product_category: str | None = None,
     callback_url: str | None = None,
 ) -> DispatchResult:
     """Validate and dispatch an IDP operativo request.
@@ -132,18 +131,19 @@ def dispatch_idp_operativo(
     Returns DispatchResult with generated operativo_id and validated input.
     Raises DispatchError on validation failure.
     """
-    if not product_description:
-        raise DispatchError("product_description is required")
+    if not document_path:
+        raise DispatchError("document_path is required")
+    if not plugin_id:
+        raise DispatchError("plugin_id is required")
     if not caller_id:
         raise DispatchError("caller_id is required")
 
-    operativo_id = f"nav-{uuid.uuid4().hex[:12]}"
+    operativo_id = f"idp-{uuid.uuid4().hex[:12]}"
 
     workflow_input = IdpOperativoInput(
-        product_description=product_description,
+        document_path=document_path,
+        plugin_id=plugin_id,
         caller_id=caller_id,
-        target_markets=target_markets,
-        product_category=product_category,
         callback_url=callback_url,
     )
 

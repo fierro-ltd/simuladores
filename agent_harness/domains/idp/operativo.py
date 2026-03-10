@@ -11,10 +11,9 @@ from agent_harness.core.operativo import OperativoStatus
 class IdpOperativoInput:
     """Input for an IDP operativo execution."""
 
-    product_description: str
+    document_path: str              # Absolute path to PDF file
+    plugin_id: str                  # IDP Platform plugin ID (e.g. "invoices")
     caller_id: str
-    target_markets: list[str] | None = None  # ["US", "EU", ...]
-    product_category: str | None = None
     callback_url: str | None = None
 
 
@@ -25,5 +24,5 @@ class IdpOperativoOutput:
     operativo_id: str
     status: OperativoStatus
     structured_result: dict
-    test_plan_url: str | None = None
+    extraction_job_id: str | None = None
     qa_summary: str | None = None

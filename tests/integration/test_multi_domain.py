@@ -108,9 +108,9 @@ class TestDomainInputTypes:
 
     def test_idp_input_type(self):
         inp = IdpOperativoInput(
-            product_description="Children's toy", caller_id="u1",
+            document_path="/tmp/doc.pdf", plugin_id="invoices", caller_id="u1",
         )
-        assert inp.product_description == "Children's toy"
+        assert inp.document_path == "/tmp/doc.pdf"
 
 
 class TestGatewayExports:

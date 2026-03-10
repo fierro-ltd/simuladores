@@ -18,41 +18,53 @@ from agent_harness.core.operativo import OperativoStatus
 class TestIdpOperativoInput:
     def test_creation(self):
         inp = IdpOperativoInput(
-            product_description="Children's toy robot",
+            document_path="/tmp/invoice.pdf",
+            plugin_id="invoices",
             caller_id="user-1",
         )
-        assert inp.product_description == "Children's toy robot"
-        assert inp.target_markets is None
-        assert inp.product_category is None
+        assert inp.document_path == "/tmp/invoice.pdf"
+        assert inp.plugin_id == "invoices"
+        assert inp.callback_url is None
 
-    def test_with_markets(self):
+    def test_with_callback(self):
         inp = IdpOperativoInput(
-            product_description="LED light",
+            document_path="/tmp/doc.pdf",
+            plugin_id="receipts",
             caller_id="u1",
-            target_markets=["US", "EU"],
+            callback_url="https://example.com/cb",
         )
-        assert inp.target_markets == ["US", "EU"]
+        assert inp.callback_url == "https://example.com/cb"
 
     def test_frozen(self):
         inp = IdpOperativoInput(
-            product_description="toy", caller_id="u1",
+            document_path="/tmp/doc.pdf", plugin_id="invoices", caller_id="u1",
         )
         with pytest.raises(AttributeError):
-            inp.product_description = "changed"
+            inp.document_path = "changed"
 
 
 class TestIdpOperativoOutput:
     def test_creation(self):
         out = IdpOperativoOutput(
-            operativo_id="nav-001",
+            operativo_id="idp-001",
             status=OperativoStatus.COMPLETED,
-            structured_result={"standards": []},
+            structured_result={"fields": []},
         )
-        assert out.operativo_id == "nav-001"
+        assert out.operativo_id == "idp-001"
+        assert out.extraction_job_id is None
+
+    def test_with_extraction_job_id(self):
+        out = IdpOperativoOutput(
+            operativo_id="idp-002",
+            status=OperativoStatus.COMPLETED,
+            structured_result={},
+            extraction_job_id="job-abc123",
+        )
+        assert out.extraction_job_id == "job-abc123"
 
     def test_frozen(self):
         out = IdpOperativoOutput(
-            operativo_id="nav-1",
+            operativo_id="idp-1",
             status=OperativoStatus.PENDING,
             structured_result={},
         )
@@ -136,19 +148,19 @@ class TestIdpExports:
         from agent_harness.domains.idp import IdpOperativoInput
 
         inp = IdpOperativoInput(
-            product_description="LED bulb", caller_id="u1",
+            document_path="/tmp/doc.pdf", plugin_id="invoices", caller_id="u1",
         )
-        assert inp.product_description == "LED bulb"
+        assert inp.document_path == "/tmp/doc.pdf"
 
     def test_output_exported(self):
         from agent_harness.domains.idp import IdpOperativoOutput
 
         out = IdpOperativoOutput(
-            operativo_id="nav-1",
+            operativo_id="idp-1",
             status=OperativoStatus.COMPLETED,
             structured_result={},
         )
-        assert out.operativo_id == "nav-1"
+        assert out.operativo_id == "idp-1"
 
     def test_discover_api_exported(self):
         from agent_harness.domains.idp import discover_api

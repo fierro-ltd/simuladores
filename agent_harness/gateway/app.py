@@ -85,10 +85,9 @@ class CEEResponse(BaseModel):
 class IdpRequest(BaseModel):
     """Request body for creating an IDP operativo."""
 
-    product_description: str
+    document_path: str
+    plugin_id: str
     caller_id: str
-    target_markets: list[str] | None = None
-    product_category: str | None = None
     callback_url: str | None = None
 
 
@@ -403,10 +402,9 @@ def create_app() -> FastAPI:
 
         try:
             result = dispatch_idp_operativo(
-                product_description=body.product_description,
+                document_path=body.document_path,
+                plugin_id=body.plugin_id,
                 caller_id=body.caller_id,
-                target_markets=body.target_markets,
-                product_category=body.product_category,
                 callback_url=body.callback_url,
             )
         except DispatchError as exc:
