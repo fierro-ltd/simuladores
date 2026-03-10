@@ -8,6 +8,10 @@ import re
 from typing import Any
 
 from agent_harness.domains.dce.tools import discover_api, get_operation_schema
+from agent_harness.domains.idp.tools import (
+    discover_api as idp_discover_api,
+    get_operation_schema as idp_get_operation_schema,
+)
 from agent_harness.llm.client import AnthropicClient
 from agent_harness.llm.tool_handler import ToolHandler
 from agent_harness.memory.domain_store import DomainStore
@@ -577,6 +581,337 @@ _CPC_TOOL_HANDLERS = {
 
 
 # ---------------------------------------------------------------------------
+# IDP Platform tool handler functions
+# ---------------------------------------------------------------------------
+
+
+def _get_idp_client() -> tuple[str, dict[str, str]]:
+    """Return (base_url, headers) for IDP Platform API."""
+    base_url = os.environ.get("IDP_PLATFORM_URL", "http://localhost:8100")
+    token = os.environ.get("IDP_PLATFORM_TOKEN", "")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return base_url, headers
+
+
+async def _handle_idp_discover_api(params: dict[str, Any]) -> str:
+    """Wrap discover_api from IDP tools manifest."""
+    category = params.get("category")
+    return idp_discover_api(category=category)
+
+
+async def _handle_idp_execute_api(params: dict[str, Any]) -> str:
+    """Validate operation exists via IDP get_operation_schema, return confirmation."""
+    operation = params.get("operation", "")
+    op_params = params.get("params", {})
+    schema = idp_get_operation_schema(operation)
+    if schema is None:
+        return json.dumps({"error": f"Unknown IDP operation: {operation}"})
+    return json.dumps({
+        "status": "executed",
+        "operation": operation,
+        "params": op_params,
+        "schema": schema,
+    })
+
+
+async def _handle_idp_upload_document(params: dict[str, Any]) -> str:
+    """Upload a document to IDP Platform via POST /api/jobs.
+
+    Params:
+        document_path: Absolute path to the document file.
+        plugin_id: Plugin to process with.
+
+    Returns:
+        JSON string with job details or error.
+    """
+    import httpx
+
+    document_path = params.get("document_path", "")
+    plugin_id = params.get("plugin_id", "")
+    if not document_path:
+        return json.dumps({"error": "document_path is required"})
+    if not os.path.isfile(document_path):
+        return json.dumps({"error": f"File not found: {document_path}"})
+    if not plugin_id:
+        return json.dumps({"error": "plugin_id is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            with open(document_path, "rb") as f:
+                resp = await client.post(
+                    f"{base_url}/api/jobs",
+                    files={"file": (os.path.basename(document_path), f, "application/pdf")},
+                    data={"plugin_id": plugin_id},
+                    headers=headers,
+                )
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP upload failed: {exc}"})
+
+
+async def _handle_idp_get_job_detail(params: dict[str, Any]) -> str:
+    """GET /api/jobs/{job_id} — full job detail with stage results."""
+    import httpx
+
+    job_id = params.get("job_id", "")
+    if not job_id:
+        return json.dumps({"error": "job_id is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(f"{base_url}/api/jobs/{job_id}", headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP get_job_detail failed: {exc}"})
+
+
+async def _handle_idp_get_job_status(params: dict[str, Any]) -> str:
+    """GET /api/jobs/{job_id}/status — lightweight status poll."""
+    import httpx
+
+    job_id = params.get("job_id", "")
+    if not job_id:
+        return json.dumps({"error": "job_id is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(f"{base_url}/api/jobs/{job_id}/status", headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP get_job_status failed: {exc}"})
+
+
+async def _handle_idp_list_jobs(params: dict[str, Any]) -> str:
+    """GET /api/jobs with optional plugin_id and limit query params."""
+    import httpx
+
+    base_url, headers = _get_idp_client()
+    query: dict[str, Any] = {}
+    if params.get("plugin_id"):
+        query["plugin_id"] = params["plugin_id"]
+    if params.get("limit"):
+        query["limit"] = params["limit"]
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(f"{base_url}/api/jobs", params=query, headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP list_jobs failed: {exc}"})
+
+
+async def _handle_idp_patch_job_verdict(params: dict[str, Any]) -> str:
+    """PATCH /api/jobs/{job_id} with verdict."""
+    import httpx
+
+    job_id = params.get("job_id", "")
+    verdict = params.get("verdict", "")
+    if not job_id:
+        return json.dumps({"error": "job_id is required"})
+    if not verdict:
+        return json.dumps({"error": "verdict is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.patch(
+                f"{base_url}/api/jobs/{job_id}",
+                json={"verdict": verdict},
+                headers=headers,
+            )
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP patch_job_verdict failed: {exc}"})
+
+
+async def _handle_idp_list_plugins(params: dict[str, Any]) -> str:
+    """GET /api/plugins."""
+    import httpx
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(f"{base_url}/api/plugins", headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP list_plugins failed: {exc}"})
+
+
+async def _handle_idp_get_plugin(params: dict[str, Any]) -> str:
+    """GET /api/plugins/{plugin_id}."""
+    import httpx
+
+    plugin_id = params.get("plugin_id", "")
+    if not plugin_id:
+        return json.dumps({"error": "plugin_id is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(f"{base_url}/api/plugins/{plugin_id}", headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP get_plugin failed: {exc}"})
+
+
+async def _handle_idp_update_schema(params: dict[str, Any]) -> str:
+    """PUT /api/plugins/{plugin_id}/schema with schema and change_description."""
+    import httpx
+
+    plugin_id = params.get("plugin_id", "")
+    schema = params.get("schema")
+    change_description = params.get("change_description", "")
+    if not plugin_id:
+        return json.dumps({"error": "plugin_id is required"})
+    if schema is None:
+        return json.dumps({"error": "schema is required"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.put(
+                f"{base_url}/api/plugins/{plugin_id}/schema",
+                json={"schema": schema, "change_description": change_description},
+                headers=headers,
+            )
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP update_schema failed: {exc}"})
+
+
+async def _handle_idp_calibrate_schema(params: dict[str, Any]) -> str:
+    """POST /api/plugins/{plugin_id}/calibrate — multipart upload of sample documents."""
+    import httpx
+
+    plugin_id = params.get("plugin_id", "")
+    document_paths = params.get("document_paths", [])
+    if not plugin_id:
+        return json.dumps({"error": "plugin_id is required"})
+    if not document_paths:
+        return json.dumps({"error": "document_paths is required"})
+
+    # Validate all paths exist before uploading
+    for path in document_paths:
+        if not os.path.isfile(path):
+            return json.dumps({"error": f"File not found: {path}"})
+
+    base_url, headers = _get_idp_client()
+    try:
+        files = []
+        file_handles = []
+        for path in document_paths:
+            fh = open(path, "rb")  # noqa: SIM115
+            file_handles.append(fh)
+            files.append(("files", (os.path.basename(path), fh, "application/pdf")))
+        try:
+            async with httpx.AsyncClient(timeout=300) as client:
+                resp = await client.post(
+                    f"{base_url}/api/plugins/{plugin_id}/calibrate",
+                    files=files,
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                return json.dumps(resp.json())
+        finally:
+            for fh in file_handles:
+                fh.close()
+    except Exception as exc:
+        return json.dumps({"error": f"IDP calibrate_schema failed: {exc}"})
+
+
+async def _handle_idp_get_calibration_status(params: dict[str, Any]) -> str:
+    """GET /api/plugins/{plugin_id}/calibrate/status with optional workflow_id."""
+    import httpx
+
+    plugin_id = params.get("plugin_id", "")
+    if not plugin_id:
+        return json.dumps({"error": "plugin_id is required"})
+
+    base_url, headers = _get_idp_client()
+    query: dict[str, str] = {}
+    if params.get("workflow_id"):
+        query["workflow_id"] = params["workflow_id"]
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(
+                f"{base_url}/api/plugins/{plugin_id}/calibrate/status",
+                params=query,
+                headers=headers,
+            )
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP get_calibration_status failed: {exc}"})
+
+
+async def _handle_idp_get_settings(params: dict[str, Any]) -> str:
+    """GET /api/settings."""
+    import httpx
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(f"{base_url}/api/settings", headers=headers)
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP get_settings failed: {exc}"})
+
+
+async def _handle_idp_update_settings(params: dict[str, Any]) -> str:
+    """PUT /api/settings with optional extraction_mode, default_llm_model, active_plugin."""
+    import httpx
+
+    body: dict[str, Any] = {}
+    for key in ("extraction_mode", "default_llm_model", "active_plugin"):
+        if params.get(key) is not None:
+            body[key] = params[key]
+
+    base_url, headers = _get_idp_client()
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.put(
+                f"{base_url}/api/settings",
+                json=body,
+                headers=headers,
+            )
+            resp.raise_for_status()
+            return json.dumps(resp.json())
+    except Exception as exc:
+        return json.dumps({"error": f"IDP update_settings failed: {exc}"})
+
+
+_IDP_TOOL_HANDLERS = {
+    "discover_api": _handle_idp_discover_api,
+    "execute_api": _handle_idp_execute_api,
+    "upload_document": _handle_idp_upload_document,
+    "get_job_detail": _handle_idp_get_job_detail,
+    "get_job_status": _handle_idp_get_job_status,
+    "list_jobs": _handle_idp_list_jobs,
+    "patch_job_verdict": _handle_idp_patch_job_verdict,
+    "list_plugins": _handle_idp_list_plugins,
+    "get_plugin": _handle_idp_get_plugin,
+    "update_schema": _handle_idp_update_schema,
+    "calibrate_schema": _handle_idp_calibrate_schema,
+    "get_calibration_status": _handle_idp_get_calibration_status,
+    "get_settings": _handle_idp_get_settings,
+    "update_settings": _handle_idp_update_settings,
+}
+
+
+# ---------------------------------------------------------------------------
 # Ravenna (synthesizer) tool handler functions
 # ---------------------------------------------------------------------------
 
@@ -650,11 +985,11 @@ def build_tool_handler(
 ) -> ToolHandler:
     """Build ToolHandler with domain-specific tool handlers.
 
-    Currently only DCE domain is supported.
+    Supports 'dce' and 'idp' domains.
 
     Args:
         client: AnthropicClient for the tool handler.
-        domain: Domain name (e.g. "dce").
+        domain: Domain name (e.g. "dce", "idp").
 
     Returns:
         ToolHandler with registered tool implementations.
@@ -662,18 +997,30 @@ def build_tool_handler(
     Raises:
         ValueError: If domain is not supported.
     """
-    if domain != "dce":
-        raise ValueError(f"Unsupported domain: {domain}. Only 'dce' is supported.")
-    handlers = {**_CPC_TOOL_HANDLERS, **_RAVENNA_TOOL_HANDLERS}
-    if operativo_id is not None:
-        base_extract = handlers["extract_pdf_text"]
+    if domain == "dce":
+        handlers = {**_CPC_TOOL_HANDLERS, **_RAVENNA_TOOL_HANDLERS}
+        if operativo_id is not None:
+            base_extract = handlers["extract_pdf_text"]
 
-        async def _extract_with_operativo(params: dict[str, Any]) -> str:
-            merged = dict(params)
-            merged["operativo_id"] = operativo_id
-            return await base_extract(merged)
+            async def _extract_with_operativo(params: dict[str, Any]) -> str:
+                merged = dict(params)
+                merged["operativo_id"] = operativo_id
+                return await base_extract(merged)
 
-        handlers["extract_pdf_text"] = _extract_with_operativo
+            handlers["extract_pdf_text"] = _extract_with_operativo
+    elif domain == "idp":
+        handlers = {**_IDP_TOOL_HANDLERS, **_RAVENNA_TOOL_HANDLERS}
+        if operativo_id is not None:
+            base_upload = handlers["upload_document"]
+
+            async def _upload_with_operativo(params: dict[str, Any]) -> str:
+                merged = dict(params)
+                merged["operativo_id"] = operativo_id
+                return await base_upload(merged)
+
+            handlers["upload_document"] = _upload_with_operativo
+    else:
+        raise ValueError(f"Unsupported domain: {domain}. Supported: 'dce', 'idp'.")
     return ToolHandler(client=client, tool_handlers=handlers)
 
 
