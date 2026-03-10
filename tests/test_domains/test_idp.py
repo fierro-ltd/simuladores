@@ -7,8 +7,9 @@ from agent_harness.domains.idp.operativo import (
     IdpOperativoOutput,
 )
 from agent_harness.domains.idp.tools import (
-    NAVIGATOR_MANIFEST,
+    IDP_MANIFEST,
     discover_api,
+    get_operation_schema,
     list_operations,
 )
 from agent_harness.core.operativo import OperativoStatus
@@ -59,26 +60,48 @@ class TestIdpOperativoOutput:
             out.status = OperativoStatus.FAILED
 
 
-class TestNavigatorManifest:
+class TestIdpManifest:
     def test_has_three_categories(self):
-        assert set(NAVIGATOR_MANIFEST.keys()) == {"identification", "planning", "matching"}
+        assert set(IDP_MANIFEST.keys()) == {"jobs", "plugins", "settings"}
+
+    def test_jobs_has_five_ops(self):
+        assert len(IDP_MANIFEST["jobs"]) == 5
+
+    def test_plugins_has_five_ops(self):
+        assert len(IDP_MANIFEST["plugins"]) == 5
+
+    def test_settings_has_two_ops(self):
+        assert len(IDP_MANIFEST["settings"]) == 2
 
     def test_total_operations(self):
-        assert len(list_operations()) == 5
+        assert len(list_operations()) == 12
 
     def test_discover_api_all(self):
         result = discover_api()
-        assert "[identification]" in result
-        assert "[planning]" in result
-        assert "identify_applicable_standards" in result
+        assert "[jobs]" in result
+        assert "[plugins]" in result
+        assert "[settings]" in result
+        assert "upload_document" in result
 
     def test_discover_api_category(self):
-        result = discover_api("matching")
-        assert "[matching]" in result
-        assert "identification" not in result
+        result = discover_api(category="jobs")
+        assert "[jobs]" in result
+        assert "upload_document" in result
+        assert "[plugins]" not in result
+        assert "[settings]" not in result
 
     def test_discover_api_unknown(self):
-        assert discover_api("nonexistent") == ""
+        assert discover_api(category="nonexistent") == ""
+
+    def test_get_operation_schema_found(self):
+        schema = get_operation_schema("upload_document")
+        assert schema is not None
+        assert "description" in schema
+        assert "params" in schema
+        assert "returns" in schema
+
+    def test_get_operation_schema_not_found(self):
+        assert get_operation_schema("nonexistent") is None
 
 
 class TestNavigatorVerificationChecklist:
@@ -108,7 +131,7 @@ class TestNavigatorVerificationChecklist:
             assert term in combined, f"Key term '{term}' not found in checklist"
 
 
-class TestNavigatorExports:
+class TestIdpExports:
     def test_input_exported(self):
         from agent_harness.domains.idp import IdpOperativoInput
 
@@ -131,10 +154,17 @@ class TestNavigatorExports:
         from agent_harness.domains.idp import discover_api
 
         result = discover_api()
-        assert "[identification]" in result
+        assert "[jobs]" in result
 
     def test_list_operations_exported(self):
         from agent_harness.domains.idp import list_operations
 
         ops = list_operations()
-        assert len(ops) == 5
+        assert len(ops) == 12
+
+    def test_get_operation_schema_exported(self):
+        from agent_harness.domains.idp import get_operation_schema
+
+        schema = get_operation_schema("list_plugins")
+        assert schema is not None
+        assert schema["returns"] == "list[dict]"
