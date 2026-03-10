@@ -116,30 +116,30 @@ class TestIdpManifest:
         assert get_operation_schema("nonexistent") is None
 
 
-class TestNavigatorVerificationChecklist:
+class TestIdpVerificationChecklist:
     def test_is_list_of_strings(self):
-        from agent_harness.domains.idp.checklist import NAVIGATOR_VERIFICATION_CHECKLIST
+        from agent_harness.domains.idp.checklist import IDP_VERIFICATION_CHECKLIST
 
-        assert isinstance(NAVIGATOR_VERIFICATION_CHECKLIST, list)
-        for item in NAVIGATOR_VERIFICATION_CHECKLIST:
+        assert isinstance(IDP_VERIFICATION_CHECKLIST, list)
+        for item in IDP_VERIFICATION_CHECKLIST:
             assert isinstance(item, str)
 
     def test_minimum_items(self):
-        from agent_harness.domains.idp.checklist import NAVIGATOR_VERIFICATION_CHECKLIST
+        from agent_harness.domains.idp.checklist import IDP_VERIFICATION_CHECKLIST
 
-        assert len(NAVIGATOR_VERIFICATION_CHECKLIST) >= 5
+        assert len(IDP_VERIFICATION_CHECKLIST) >= 5
 
     def test_all_are_questions(self):
-        from agent_harness.domains.idp.checklist import NAVIGATOR_VERIFICATION_CHECKLIST
+        from agent_harness.domains.idp.checklist import IDP_VERIFICATION_CHECKLIST
 
-        for item in NAVIGATOR_VERIFICATION_CHECKLIST:
+        for item in IDP_VERIFICATION_CHECKLIST:
             assert item.endswith("?"), f"Checklist item is not a question: {item}"
 
     def test_key_terms_present(self):
-        from agent_harness.domains.idp.checklist import NAVIGATOR_VERIFICATION_CHECKLIST
+        from agent_harness.domains.idp.checklist import IDP_VERIFICATION_CHECKLIST
 
-        combined = " ".join(NAVIGATOR_VERIFICATION_CHECKLIST).lower()
-        for term in ["standard", "product", "test plan"]:
+        combined = " ".join(IDP_VERIFICATION_CHECKLIST).lower()
+        for term in ["plugin", "schema", "extraction"]:
             assert term in combined, f"Key term '{term}' not found in checklist"
 
 

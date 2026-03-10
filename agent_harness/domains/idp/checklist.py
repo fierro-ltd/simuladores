@@ -1,11 +1,13 @@
 """IDP domain verification checklist — deterministic checks for QA review."""
 
-NAVIGATOR_VERIFICATION_CHECKLIST: list[str] = [
-    "Are all applicable standards correctly identified for the product and target markets?",
-    "Does the test plan cover every identified standard with specific test methods?",
-    "Is the product classification consistent with the product description and category?",
-    "Do the matched labs have verified capabilities for all required tests?",
-    "Does the structured_result conform to the expected JSON schema with all required fields?",
-    "Are timeline estimates and cost projections within plausible ranges for the test scope?",
+IDP_VERIFICATION_CHECKLIST: list[str] = [
+    "Was the correct plugin selected for the document type?",
+    "Did all extraction stages complete without errors?",
+    "Are all required schema fields present in the extraction result?",
+    "Do extracted field values match visible content in the source document?",
+    "Are confidence scores for extracted fields above acceptable thresholds?",
+    "Were any stage issues flagged that require human review?",
+    "Does the structured_result conform to the plugin's extraction schema?",
+    "Is the job status consistent with the stage results (no silent failures)?",
     "Does the QA summary accurately reflect blocking vs warning vs informational findings?",
 ]
