@@ -1,4 +1,4 @@
-# Agent Harness -- Architecture
+# Simuladores -- Architecture
 
 **Date:** 2026-02-22
 **Status:** Living document
@@ -10,13 +10,15 @@
 
 ## 1. System Overview
 
-The Agent Harness is a **domain-locked, Temporal-orchestrated agent system** that wraps existing AI services. Each harness instance resolves exactly one class of task for exactly one domain, deterministically, with an auditable trail.
+Simuladores is a **domain-locked, Temporal-orchestrated agent system** that wraps existing AI services. Inspired by [Los Simuladores](https://es.wikipedia.org/wiki/Los_simuladores), each operativo is planned and executed by a four-agent brigada. Each instance resolves exactly one class of task for exactly one domain, deterministically, with an auditable trail.
 
 It is not a general-purpose AI assistant, not a replacement for existing services, and not built on LangChain or AutoGen.
 
 ### What It Wraps
 
-The DCE (Document Compliance Engine) domain is the reference implementation. The harness wraps the existing **DCE Backend's 28 Temporal activities across 5 task queues** (extraction, navigation, validation, tools, global) -- adding intelligent planning, document investigation, unified execution, and synthesis without modifying any of the DCE Backend's existing activities.
+The DCE (Document Compliance Engine) domain is the reference implementation. Simuladores wraps the existing **DCE Backend's 28 Temporal activities across 5 task queues** (extraction, navigation, validation, tools, global) — adding intelligent planning, document investigation, unified execution, and synthesis without modifying any of the DCE Backend's existing activities.
+
+The IDP (Intelligent Document Processing) domain is the second connected domain. Simuladores wraps the **IDP Platform's 19 REST endpoints** across jobs, plugins, and settings — providing document extraction, schema calibration, and plugin management through the same four-agent lifecycle.
 
 Recent DCE additions also include deterministic citation completeness classification and optional GCP-native web verification for ambiguous citation applicability cases.
 
@@ -563,14 +565,14 @@ agent_harness/
       checklist.py             DCE validation checklist
       worker.py                DCE Temporal worker config
     has/                       HAS domain (placeholder)
-    idp/                 IDP domain (placeholder)
+    idp/                       IDP domain (connected to IDP Platform)
   workflows/
     operativo_workflow.py      CPCOperativoWorkflow: Phases 0-6
     session_bridge.py          Fallback compaction (Temporal child workflow)
     heartbeat.py               Temporal cron: monitoring
     cortex.py                  CortexBulletinWorkflow: cross-session memory
     has_workflow.py            HAS workflow (placeholder)
-    idp_workflow.py      IDP workflow (placeholder)
+    idp_workflow.py            IDP workflow (connected)
     search_attributes.py       Temporal search attribute definitions
   activities/
     planner.py                 santos_plan() activity
@@ -638,4 +640,4 @@ tests/
 | Injection scanning | Pattern matching + homoglyphs + base64 + metadata | Multi-vector defense against known injection techniques | OpenClaw security analysis |
 | Loop detection | Built-in loop detection in tool handler | Prevent stuck agent loops from consuming resources | NanoClaw agent loop patterns |
 | Sandbox | Docker v1 now, Monty v2 when stable | Monty v0.0.5 lacks JSON support. Stable interface allows transparent swap. | -- |
-| Domain scope | DCE-first, HAS and IDP deferred to v0.5 | Prove the agent layer on one domain before scaling. | -- |
+| Domain scope | DCE-first, IDP connected, HAS deferred | Prove the agent layer on one domain, then expand. IDP validates multi-domain pattern. | -- |

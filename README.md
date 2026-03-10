@@ -1,12 +1,12 @@
-# Agent Harness
+# Simuladores
 
-**Current Version:** v1.7.0 | **Python:** 3.11+
+**Current Version:** v1.8.0 | **Python:** 3.11+
 
-Domain-locked, Temporal-orchestrated agent system for production automation of business processes. Each harness instance resolves exactly one class of task for exactly one domain, deterministically, with an auditable trail.
+Domain-locked, Temporal-orchestrated agent system for production automation of business processes. Inspired by [Los Simuladores](https://es.wikipedia.org/wiki/Los_simuladores), each operativo is planned and executed by a four-agent brigada — Santos, Medina, Lamponne, and Ravenna — resolving exactly one class of task for exactly one domain, deterministically, with an auditable trail.
 
 ## Overview
 
-The harness wraps existing AI services — starting with the [DCE Backend](https://github.com/fierro-ltd/genai-document-compliance) — adding intelligent planning, document investigation, quality assurance, and synthesis without modifying the underlying systems. The DCE Backend integration is now live: the harness dispatches to DCE Backend's Temporal activities via REST API for real PDF extraction and product validation.
+Simuladores wraps existing AI services — starting with the [DCE Backend](https://github.com/fierro-ltd/genai-document-compliance) and the [IDP Platform](https://idp-platform-template.demos.fierro.co.uk/) — adding intelligent planning, document investigation, quality assurance, and synthesis without modifying the underlying systems.
 
 ### The Brigada
 
@@ -77,8 +77,8 @@ Open source stack. Only external API dependency: Anthropic via Google Vertex AI.
 | Domain | Status | Description |
 |--------|--------|-------------|
 | DCE Work Order | Reference implementation | Document Compliance Engine validation (regulatory compliance) |
-| Healthcare AI Suite | Future | healthcare AI processing audits |
-| Intelligent Document Processing | Future | Test navigation and compliance |
+| IDP | Connected | Intelligent Document Processing — document extraction with plugins and schemas |
+| Healthcare AI Suite | Future | Healthcare AI processing audits |
 
 ## Development
 
@@ -100,6 +100,9 @@ docker compose up -d
 
 # Run DCE worker
 python -m agent_harness.workers.dce
+
+# Run IDP worker
+python -m agent_harness.workers.idp
 
 # Run API gateway
 python -m agent_harness.gateway
@@ -127,7 +130,7 @@ This generates rendered SVGs from all markdown Mermaid blocks into `docs/diagram
 ## Project Structure
 
 ```
-agent-harness/
+simuladores/
 ├── core/              Base classes, permissions, registry
 ├── prompt/            Prompt assembly (most critical), injection guard, compaction
 ├── memory/            Domain, session, and semantic memory stores
@@ -135,9 +138,10 @@ agent-harness/
 ├── llm/               AnthropicClient (Vertex AI), ToolHandler
 ├── sandbox/           Docker v1 + Monty v2 stub (stable interface)
 ├── domains/dce/       DCE domain: memory file, tools, worker, operativo
+├── domains/idp/       IDP domain: document extraction with plugins
 ├── workflows/         Temporal workflow definitions
 ├── activities/        Temporal activities (@activity.defn + factory)
-├── workers/           DCE Temporal worker
+├── workers/           Domain Temporal workers (DCE, IDP)
 ├── storage/           StorageBackend protocol (local/GCS)
 ├── gateway/           FastAPI intake, dispatch, status
 ├── observability/     Logging, metrics, benchmarks
@@ -156,8 +160,9 @@ agent-harness/
 
 ## Related Systems
 
-- [dispatch](https://github.com/fierro-ltd/dispatch) — email routing service (sends jobs to the harness)
-- [DCE Backend](https://github.com/fierro-ltd/genai-document-compliance) — existing DCE validation (harness wraps its 20 Temporal activities)
+- [dispatch](https://github.com/fierro-ltd/dispatch) — email routing service (sends jobs to Simuladores)
+- [DCE Backend](https://github.com/fierro-ltd/genai-document-compliance) — existing DCE validation (Simuladores wraps its 20 Temporal activities)
+- [IDP Platform](https://idp-platform-template.demos.fierro.co.uk/) — document extraction platform (Simuladores wraps its 19 REST endpoints)
 - [Healthcare AI Suite](https://github.com/fierro-ltd/healthcare-ai-suite) — future domain target
 
 ## Roadmap
@@ -170,7 +175,8 @@ agent-harness/
 | v1.2 | 16-18 | Security hardening, GCS storage, cache monitoring, semantic patterns |
 | v1.3 | 19 | Vertex AI migration (AsyncAnthropicVertex) |
 | v1.4 | 20 | DCE production: real PDF extraction via DCE Backend, e2e test |
-| v1.5 | Next | Compaction API integration, PostgresGraphStore |
+| v1.9 | 24 | IDP domain connected to IDP Platform (12 operations, 14 HTTP handlers) |
+| v2.0 | Next | Compaction API integration, PostgresGraphStore |
 
 ### Sources & References
 

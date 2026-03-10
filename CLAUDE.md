@@ -1,10 +1,10 @@
-# CLAUDE.md — Agent Harness
+# CLAUDE.md — Simuladores
 
 ## What This Project Is
 
-Domain-locked, Temporal-orchestrated agent system that wraps existing AI services. Each harness instance resolves one class of task for one domain. DCE (Document Compliance Engine) is the first and reference domain.
+Domain-locked, Temporal-orchestrated agent system that wraps existing AI services. Inspired by [Los Simuladores](https://es.wikipedia.org/wiki/Los_simuladores), each operativo is executed by a four-agent brigada. Each instance resolves one class of task for one domain. DCE (Document Compliance Engine) is the reference domain; IDP (Intelligent Document Processing) is the second connected domain.
 
-The harness adds intelligent planning (Santos), document investigation (Medina), unified execution (Lamponne), and synthesis (Ravenna) around the existing DCE Backend's 20 Temporal activities — without modifying them.
+Simuladores adds intelligent planning (Santos), document investigation (Medina), unified execution (Lamponne), and synthesis (Ravenna) around existing backend services — without modifying them.
 
 ## Tech Stack
 
@@ -38,6 +38,7 @@ memory/       Five-layer memory: domain, session, semantic stores
 agents/       Santos, Medina, Lamponne, Ravenna implementations
 sandbox/      Docker v1 backend, Monty v2 stub, stable SandboxBackend interface
 domains/dce/  DCE domain: DCE.md, tools manifest, worker, operativo
+domains/idp/  IDP domain: IDP.md, tools manifest, worker, operativo
 workflows/    Temporal workflow definitions
 activities/   Temporal activity implementations (where PolicyChain runs)
 storage/      StorageBackend protocol + local/GCS implementations
@@ -91,6 +92,7 @@ Run: `pytest tests/`
 
 ## Related Systems
 
-- **dispatch** — email routing service that will send jobs to the harness
-- **DCE Backend** (fierro-ltd/genai-document-compliance) — existing DCE validation system; harness wraps its 20 Temporal activities
+- **dispatch** — email routing service that will send jobs to Simuladores
+- **DCE Backend** (fierro-ltd/genai-document-compliance) — existing DCE validation system; Simuladores wraps its 20 Temporal activities
+- **IDP Platform** — document extraction platform; Simuladores wraps its 19 REST endpoints
 - **Healthcare AI Suite** (fierro-ltd/healthcare-ai-suite) — future domain target

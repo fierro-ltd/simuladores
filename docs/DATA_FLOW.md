@@ -1,6 +1,6 @@
-# Data Flow — Agent Harness (DCE Domain)
+# Data Flow — Simuladores (DCE Domain)
 
-How data moves through the Agent Harness during a DCE operativo, from API intake to final result delivery.
+How data moves through Simuladores during a DCE operativo, from API intake to final result delivery.
 
 > Diagrams use [Mermaid](https://mermaid.js.org/) syntax and render natively on GitHub.
 
