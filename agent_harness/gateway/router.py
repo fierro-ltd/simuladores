@@ -28,7 +28,7 @@ def build_default_registry() -> OperativoRegistry:
     registry = OperativoRegistry()
     registry.register("dce", "dce-operativo", "CPCWorkflow")
     registry.register("has", "has-operativo", "CEEWorkflow")
-    registry.register("idp", "nav-operativo", "IdpWorkflow")
+    registry.register("idp", "idp-operativo", "IdpWorkflow")
     return registry
 
 

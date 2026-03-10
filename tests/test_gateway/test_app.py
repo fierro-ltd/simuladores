@@ -148,7 +148,7 @@ def test_create_idp_operativo_valid(client: TestClient):
     data = response.json()
     assert data["operativo_id"].startswith("idp-")
     assert data["status"] == "PENDING"
-    assert data["task_queue"] == "nav-operativo"
+    assert data["task_queue"] == "idp-operativo"
 
 
 def test_create_idp_operativo_missing_fields(client: TestClient):

@@ -17,7 +17,7 @@ from agent_harness.workflows.idp_workflow import IdpOperativoWorkflow
 
 logger = logging.getLogger(__name__)
 
-NAVIGATOR_TASK_QUEUE = "nav-operativo"
+IDP_TASK_QUEUE = "idp-operativo"
 
 
 def get_workflow_list() -> list[type]:
@@ -72,12 +72,12 @@ async def run_worker() -> None:
 
     worker = Worker(
         client,
-        task_queue=NAVIGATOR_TASK_QUEUE,
+        task_queue=IDP_TASK_QUEUE,
         workflows=get_workflow_list(),
         activities=get_activity_list(),
     )
 
-    logger.info("IDP worker started on task queue '%s'", NAVIGATOR_TASK_QUEUE)
+    logger.info("IDP worker started on task queue '%s'", IDP_TASK_QUEUE)
     await run_worker_with_graceful_shutdown(worker)
 
 

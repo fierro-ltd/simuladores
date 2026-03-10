@@ -27,7 +27,7 @@ class TestBuildDefaultRegistry:
 
     def test_idp_task_queue(self):
         registry = build_default_registry()
-        assert registry.get("idp").task_queue == "nav-operativo"
+        assert registry.get("idp").task_queue == "idp-operativo"
 
 
 class TestRouteOperativo:

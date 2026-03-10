@@ -30,7 +30,7 @@ from agent_harness.observability.audit import AuditEntry, AuditEvent, AuditLogge
 from agent_harness.observability.cache_monitor import CacheMonitor
 from agent_harness.workers.dce import CPC_TASK_QUEUE
 from agent_harness.workers.has import CEE_TASK_QUEUE
-from agent_harness.workers.idp import NAVIGATOR_TASK_QUEUE
+from agent_harness.workers.idp import IDP_TASK_QUEUE
 
 logger = logging.getLogger(__name__)
 
@@ -418,7 +418,7 @@ def create_app() -> FastAPI:
                 IdpOperativoWorkflow.run,
                 result.workflow_input,
                 id=result.operativo_id,
-                task_queue=NAVIGATOR_TASK_QUEUE,
+                task_queue=IDP_TASK_QUEUE,
             )
         except Exception as exc:
             logger.error("Temporal submission failed: %s", exc)
@@ -441,7 +441,7 @@ def create_app() -> FastAPI:
         return IdpResponse(
             operativo_id=result.operativo_id,
             status=result.status.value,
-            task_queue=NAVIGATOR_TASK_QUEUE,
+            task_queue=IDP_TASK_QUEUE,
         )
 
     @app.get("/operativo/{operativo_id}/status", response_model=StatusResponse)

@@ -318,7 +318,7 @@ Domain isolation by construction -- each worker process only registers its own d
 ```
 DCE Worker       -> dce-operativo queue   -> DCE tools only, DCE.md only
 HAS Worker       -> has-operativo queue   -> HAS tools only, HAS.md only
-IDP Worker -> nav-operativo queue   -> IDP tools only, IDP.md only
+IDP Worker       -> idp-operativo queue   -> IDP tools only, IDP.md only
 ```
 
 ---

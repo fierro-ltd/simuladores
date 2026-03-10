@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from agent_harness.workers.idp import NAVIGATOR_TASK_QUEUE, get_activity_list, get_workflow_list
+from agent_harness.workers.idp import IDP_TASK_QUEUE, get_activity_list, get_workflow_list
 from agent_harness.workflows.idp_workflow import IdpOperativoWorkflow
 
 
 def test_idp_task_queue():
     """Task queue name matches the IDP convention."""
-    assert NAVIGATOR_TASK_QUEUE == "nav-operativo"
+    assert IDP_TASK_QUEUE == "idp-operativo"
 
 
 def test_workflow_list_contains_navigator():
