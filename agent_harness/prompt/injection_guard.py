@@ -61,6 +61,10 @@ _PHRASE_PATTERNS: list[tuple[str, str]] = [
     (r"new\s+instructions", "new instructions"),
     (r"override", "override"),
     (r"disregard", "disregard"),
+    (r"system\s*:\s*", "system role injection"),
+    (r"\[INST\]", "instruction format injection"),
+    (r"<\|im_start\|>", "ChatML injection"),
+    (r"assistant\s*:\s*", "assistant role confusion"),
 ]
 
 # Imperative commands
