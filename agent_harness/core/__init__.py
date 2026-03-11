@@ -26,6 +26,10 @@ from agent_harness.core.plan import (
     ExecutionPlan,
     PhaseResult,
 )
+from agent_harness.core.domain_registry import (
+    DomainManifest,
+    DomainRegistry,
+)
 from agent_harness.core.registry import (
     OperativoRegistry,
     RegistryEntry,
@@ -57,4 +61,7 @@ __all__ = [
     # registry
     "RegistryEntry",
     "OperativoRegistry",
+    # domain registry
+    "DomainManifest",
+    "DomainRegistry",
 ]

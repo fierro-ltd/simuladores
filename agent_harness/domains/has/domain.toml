@@ -1,0 +1,29 @@
+[domain]
+id = "has"
+name = "Healthcare AI Suite"
+version = "1.0.0"
+
+[domain.models]
+investigator = "claude-opus-4-6"
+orchestrator = "claude-opus-4-6"
+executor = "claude-sonnet-4-6"
+synthesizer = "claude-sonnet-4-6"
+
+[domain.mcp]
+server_module = "agent_harness.domains.has.mcp_server"
+server_port = 8003
+
+[domain.temporal]
+task_queue = "has-operativo"
+workflow_id_prefix = "has"
+
+[domain.memory]
+collection = "has_domain"
+
+[domain.injection_guard]
+semantic_check = true
+semantic_threshold = 0.7
+
+[domain.limits]
+max_correction_attempts = 3
+compaction_threshold = 0.75
