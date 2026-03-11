@@ -15,6 +15,7 @@ from agent_harness.memory.graph import (
     RelationType,
 )
 from agent_harness.memory.graph_store import InMemoryGraphStore
+from agent_harness.memory.mem0_backend import Mem0Config, Mem0DomainMemory, build_memory
 from agent_harness.memory.recall import MemoryRecall
 from agent_harness.memory.semantic_store import Pattern, SemanticStore
 from agent_harness.memory.session_store import SessionStore
@@ -46,4 +47,8 @@ __all__ = [
     "InMemoryGraphStore",
     # Recall
     "MemoryRecall",
+    # mem0 backend
+    "Mem0Config",
+    "Mem0DomainMemory",
+    "build_memory",
 ]
