@@ -1,17 +1,48 @@
-description: Simuladores operativo quality regression suite
+description: Simuladores operativo quality regression suite (multi-provider)
 
 providers:
   - id: http
+    label: "anthropic-vertex"
     config:
       url: http://localhost:8080/operativo/dce
       method: POST
       headers:
         X-API-Key: "{{SIMULADORES_API_KEY}}"
+        X-Provider-Profile: "anthropic-vertex"
       body:
         domain: "{{domain}}"
         pdf_path: "{{pdf_path}}"
         pdf_filename: "{{pdf_filename}}"
         caller_id: "{{caller_id}}"
+
+  - id: http
+    label: "openrouter-claude"
+    config:
+      url: http://localhost:8080/operativo/dce
+      method: POST
+      headers:
+        X-API-Key: "{{SIMULADORES_API_KEY}}"
+        X-Provider-Profile: "openrouter"
+      body:
+        domain: "{{domain}}"
+        pdf_path: "{{pdf_path}}"
+        pdf_filename: "{{pdf_filename}}"
+        caller_id: "{{caller_id}}"
+
+  # Phase 3 — run in CI with Ollama service
+  # - id: http
+  #   label: "local-ollama"
+  #   config:
+  #     url: http://localhost:8080/operativo/dce
+  #     method: POST
+  #     headers:
+  #       X-API-Key: "{{SIMULADORES_API_KEY}}"
+  #       X-Provider-Profile: "local-ollama"
+  #     body:
+  #       domain: "{{domain}}"
+  #       pdf_path: "{{pdf_path}}"
+  #       pdf_filename: "{{pdf_filename}}"
+  #       caller_id: "{{caller_id}}"
 
 tests:
   - description: "DCE compliant work order — should return COMPLIANT"
