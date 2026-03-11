@@ -1,6 +1,6 @@
 """Tests for Santos QA reviewer."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 

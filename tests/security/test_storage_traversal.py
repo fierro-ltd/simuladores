@@ -1,6 +1,5 @@
 """Tests for storage path traversal prevention."""
 
-import pytest
 
 from agent_harness.storage.local import LocalStorageBackend
 

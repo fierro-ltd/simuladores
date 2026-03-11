@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import os
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from agent_harness.gateway.app import create_app
-from agent_harness.gateway.dispatch import DispatchError
 
 
 @pytest.fixture()

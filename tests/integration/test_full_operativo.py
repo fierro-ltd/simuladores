@@ -1,6 +1,5 @@
 """Tests for full operativo lifecycle (Phases 0-6)."""
 
-import pytest
 
 from agent_harness.workflows.operativo_workflow import CPCWorkflow, WorkflowConfig
 from agent_harness.activities.planner import PlannerInput
@@ -207,9 +206,7 @@ class TestExportsIntegration:
     def test_activities_exports(self):
         from agent_harness.activities import (
             QAReviewInput,
-            QAReviewOutput,
             PostJobInput,
-            PostJobOutput,
         )
         assert QAReviewInput is not None
         assert PostJobInput is not None
@@ -227,14 +224,11 @@ class TestExportsIntegration:
     def test_synthesizer_exports(self):
         from agent_harness.activities import (
             SynthesizerInput,
-            SynthesizerOutput,
-            QASummary,
         )
         assert SynthesizerInput is not None
 
     def test_ravenna_exports(self):
         from agent_harness.agents import (
             RAVENNA_SYSTEM_IDENTITY,
-            RAVENNA_TOOLS,
         )
         assert RAVENNA_SYSTEM_IDENTITY is not None

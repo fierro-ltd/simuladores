@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import os as _os
+
 from agent_harness.prompt.builder import PromptBuilder
 
 
@@ -25,7 +27,6 @@ class AgentConfig:
 
 
 # Model assignments are hardcoded, not configurable.
-import os as _os
 
 # Override all models via env var for local dev/testing (Opus can be very slow on Vertex AI)
 _DEV_MODEL = _os.environ.get("HARNESS_DEV_MODEL")

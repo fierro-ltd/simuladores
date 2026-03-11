@@ -1,6 +1,5 @@
 """Integration tests for the full stack configuration."""
 
-import pytest
 
 from agent_harness.workers.dce import CPC_TASK_QUEUE, get_workflow_list, get_activity_list
 from agent_harness.gateway.app import create_app
@@ -43,10 +42,8 @@ def test_full_import_chain():
         SantosPlanner, MedinaInvestigator, LamponneExecutor,
         RavennaSynthesizer, SantosQAReviewer,
     )
-    from agent_harness.activities.implementations import santos_plan, medina_investigate
     from agent_harness.workflows.operativo_workflow import CPCOperativoWorkflow
     from agent_harness.workers.dce import CPC_TASK_QUEUE
-    from agent_harness.gateway.app import create_app
 
     assert AnthropicClient is not None
     assert ToolHandler is not None

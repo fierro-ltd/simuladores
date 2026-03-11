@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from agent_harness.agents.base import AgentConfig, AGENT_MODELS, BaseAgent
 

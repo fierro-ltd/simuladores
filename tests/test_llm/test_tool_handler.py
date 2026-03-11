@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -211,3 +210,112 @@ class TestToolLoopUnknownTool:
         assert result.tool_errors == 1
         assert result.turns == 2
         assert result.final_content == "Recovered."
+
+
+# ---------------------------------------------------------------------------
+# Compaction integration tests
+# ---------------------------------------------------------------------------
+
+
+class TestToolLoopCompaction:
+    """Test compaction_client integration in ToolHandler."""
+
+    async def test_backward_compat_no_compaction_client(self, mock_anthropic):
+        """ToolHandler works fine without compaction_client (default None)."""
+        client, mock_send = mock_anthropic
+        mock_send.return_value = _text_result("All done.")
+
+        handler = ToolHandler(client, {})
+        result = await handler.run_loop(_prompt(), "claude-sonnet-4-6", TOOLS)
+
+        assert result.final_content == "All done."
+        assert result.turns == 1
+
+    async def test_compaction_triggers_when_threshold_exceeded(self, mock_anthropic):
+        """When token estimate exceeds threshold, compaction is called."""
+        client, mock_send = mock_anthropic
+
+        # Build a mock CompactionClient that always says needs_compaction=True
+        mock_compaction_client = AsyncMock()
+        mock_compaction_client.needs_compaction = lambda tokens: True
+
+        from agent_harness.prompt.compaction_client import CompactionResult, CompactionStrategy
+
+        compacted_msgs = [
+            {"role": "user", "content": "Execute the plan."},
+        ]
+        mock_compaction_client.compact = AsyncMock(
+            return_value=CompactionResult(
+                compacted_messages=compacted_msgs,
+                tokens_before=1000,
+                tokens_after=100,
+                strategy_used=CompactionStrategy.ANTHROPIC_API,
+                protected_fields_preserved=0,
+            )
+        )
+
+        mock_raw_client = AsyncMock()
+
+        async def fake_discover(inp: dict) -> str:
+            return "ok"
+
+        mock_send.side_effect = [
+            _tool_use_result("discover_api", {"category": "extraction"}, "toolu_01"),
+            _text_result("Done after compaction."),
+        ]
+
+        handler = ToolHandler(
+            client,
+            {"discover_api": fake_discover},
+            compaction_client=mock_compaction_client,
+            anthropic_raw_client=mock_raw_client,
+        )
+        result = await handler.run_loop(_prompt(), "claude-sonnet-4-6", TOOLS)
+
+        assert result.final_content == "Done after compaction."
+        # compact() should have been called at least once
+        assert mock_compaction_client.compact.call_count >= 1
+
+    async def test_compaction_not_triggered_below_threshold(self, mock_anthropic):
+        """When needs_compaction returns False, compact() is never called."""
+        client, mock_send = mock_anthropic
+
+        mock_compaction_client = AsyncMock()
+        mock_compaction_client.needs_compaction = lambda tokens: False
+        mock_compaction_client.compact = AsyncMock()
+
+        mock_raw_client = AsyncMock()
+
+        mock_send.return_value = _text_result("Done.")
+
+        handler = ToolHandler(
+            client,
+            {},
+            compaction_client=mock_compaction_client,
+            anthropic_raw_client=mock_raw_client,
+        )
+        result = await handler.run_loop(_prompt(), "claude-sonnet-4-6", TOOLS)
+
+        assert result.final_content == "Done."
+        mock_compaction_client.compact.assert_not_called()
+
+    async def test_compaction_requires_both_clients(self, mock_anthropic):
+        """Compaction only runs when both compaction_client and raw client are set."""
+        client, mock_send = mock_anthropic
+
+        mock_compaction_client = AsyncMock()
+        mock_compaction_client.needs_compaction = lambda tokens: True
+        mock_compaction_client.compact = AsyncMock()
+
+        mock_send.return_value = _text_result("Done.")
+
+        # Only compaction_client, no raw client
+        handler = ToolHandler(
+            client,
+            {},
+            compaction_client=mock_compaction_client,
+        )
+        result = await handler.run_loop(_prompt(), "claude-sonnet-4-6", TOOLS)
+
+        assert result.final_content == "Done."
+        mock_compaction_client.compact.assert_not_called()

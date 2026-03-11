@@ -1,7 +1,6 @@
 """Tests for DCE citation completeness registry helpers."""
 
 import json
-import pytest
 
 from agent_harness.domains.dce.citation_completeness import (
     derive_provided_citations,

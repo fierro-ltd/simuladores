@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from agent_harness.memory.bulletin import Bulletin
 from agent_harness.memory.bulletin_store import InMemoryBulletinStore

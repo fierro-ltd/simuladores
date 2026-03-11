@@ -1,11 +1,9 @@
 """Tests for multi-domain routing and registry integration."""
 
-import pytest
 
 from agent_harness.gateway.router import (
     build_default_registry,
     route_operativo,
-    RouteError,
 )
 from agent_harness.gateway.email_intake import (
     AttachmentRef,
@@ -13,7 +11,6 @@ from agent_harness.gateway.email_intake import (
     validate_email_payload,
     find_pdf_attachment,
 )
-from agent_harness.core.registry import OperativoRegistry
 from agent_harness.core.operativo import OperativoStatus
 from agent_harness.domains.dce.operativo import CPCOperativoInput
 from agent_harness.domains.has.operativo import CEEOperativoInput
@@ -118,9 +115,6 @@ class TestGatewayExports:
         from agent_harness.gateway import (
             DispatchResult,
             RouteResult,
-            EmailIntakePayload,
-            route_operativo,
-            validate_email_payload,
         )
         assert DispatchResult is not None
         assert RouteResult is not None

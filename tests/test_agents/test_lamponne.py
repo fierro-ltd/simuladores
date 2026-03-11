@@ -1,6 +1,5 @@
 """Tests for Lamponne executor agent configuration."""
 
-import pytest
 
 from agent_harness.agents.lamponne import (
     LAMPONNE_SYSTEM_IDENTITY,

@@ -4,13 +4,11 @@ Tests the injection_guard.scan_content function against a wide
 range of prompt injection patterns, including obfuscation techniques.
 """
 
-import pytest
 import base64
 
 from agent_harness.prompt.injection_guard import (
     scan_content,
     InjectionRisk,
-    InjectionResult,
 )
 
 

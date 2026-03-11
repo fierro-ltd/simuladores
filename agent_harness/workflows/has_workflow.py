@@ -21,7 +21,7 @@ with workflow.unsafe.imports_passed_through():
     from agent_harness.activities.agent_loop import AgentLoopInput, AgentLoopOutput
     from agent_harness.activities.investigator import InvestigatorInput, InvestigatorOutput
     from agent_harness.activities.qa_review import QAReviewInput, QAReviewOutput
-    from agent_harness.activities.post_job import PostJobInput, PostJobOutput
+    from agent_harness.activities.post_job import PostJobInput
     from agent_harness.activities.synthesizer import SynthesizerInput, SynthesizerOutput
     from agent_harness.agents.lamponne import LAMPONNE_TOOLS
     from agent_harness.core.operativo import OperativoStatus

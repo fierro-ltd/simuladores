@@ -6,7 +6,6 @@ token usage, and end-to-end operativo performance.
 
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 
 

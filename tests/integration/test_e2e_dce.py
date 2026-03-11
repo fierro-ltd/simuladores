@@ -20,7 +20,6 @@ from agent_harness.activities.factory import (
     _handle_extract_pdf_text,
     _handle_extract_pdf_text_local,
     _handle_extract_cpc_data,
-    _extract_cpc_fields,
 )
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,5 @@
 """Tests for sandbox interface and routing."""
 
-import pytest
 
 from agent_harness.sandbox.python_runner import (
     SandboxRequest,

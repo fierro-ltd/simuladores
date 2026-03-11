@@ -12,7 +12,6 @@ from agent_harness.activities.factory import (
     _handle_idp_execute_api,
     _handle_idp_get_job_detail,
     _handle_idp_get_job_status,
-    _handle_idp_list_jobs,
     _handle_idp_patch_job_verdict,
     _handle_idp_get_plugin,
     _handle_idp_update_schema,

@@ -25,6 +25,7 @@ from agent_harness.gateway.dispatch import (
     dispatch_has_operativo,
     dispatch_idp_operativo,
 )
+from agent_harness.gateway.feedback import FeedbackRequest
 from agent_harness.gateway.rate_limiter import InMemoryRateLimiter
 from agent_harness.observability.audit import AuditEntry, AuditEvent, AuditLogger
 from agent_harness.observability.cache_monitor import CacheMonitor
@@ -177,6 +178,16 @@ def create_app() -> FastAPI:
         description="Operativo intake and status API.",
     )
 
+    # Observability
+    from agent_harness.observability.logfire_config import configure_observability
+
+    configure_observability(
+        service_name="simuladores",
+        environment="development",
+        send_to_logfire=False,
+        fastapi_app=app,
+    )
+
     # Store on app state for access in tests
     app.state.auth = auth
     app.state.rate_limiter = rate_limiter
@@ -283,7 +294,6 @@ def create_app() -> FastAPI:
                 timeout=1.0,
             )
         except Exception:
-            from fastapi.responses import JSONResponse
             raise HTTPException(status_code=503, detail="Temporal unavailable")
         return {"status": "ready"}
 
@@ -443,6 +453,14 @@ def create_app() -> FastAPI:
             status=result.status.value,
             task_queue=IDP_TASK_QUEUE,
         )
+
+    @app.post("/operativos/{operativo_id}/feedback", status_code=202)
+    async def submit_feedback(
+        request: Request, operativo_id: str, body: FeedbackRequest,
+    ) -> dict:
+        """Human reviewer submits feedback on a completed operativo."""
+        _check_auth_and_rate(request)
+        return {"status": "feedback_queued", "operativo_id": operativo_id}
 
     @app.get("/operativo/{operativo_id}/status", response_model=StatusResponse)
     async def get_operativo_status(request: Request, operativo_id: str) -> StatusResponse:

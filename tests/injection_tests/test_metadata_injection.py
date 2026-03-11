@@ -7,10 +7,8 @@ Keywords, Creator, Producer).
 
 import base64
 
-import pytest
 
 from agent_harness.prompt.injection_guard import (
-    InjectionResult,
     InjectionRisk,
     scan_content,
     scan_document,

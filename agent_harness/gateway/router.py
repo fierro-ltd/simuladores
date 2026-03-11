@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass
 
 from agent_harness.core.operativo import OperativoStatus
-from agent_harness.core.registry import OperativoRegistry, RegistryEntry
+from agent_harness.core.registry import OperativoRegistry
 
 
 @dataclass(frozen=True)

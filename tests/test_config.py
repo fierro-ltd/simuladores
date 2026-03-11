@@ -1,6 +1,5 @@
 """Tests for production configuration."""
 
-import os
 import pytest
 
 from agent_harness.config import (

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
 
 from agent_harness.agents.santos import (
     SANTOS_SYSTEM_IDENTITY,
@@ -12,7 +11,7 @@ from agent_harness.agents.santos import (
     parse_plan_json,
 )
 from agent_harness.agents.base import AgentConfig, BaseAgent
-from agent_harness.core.plan import AgentTask, ExecutionPlan
+from agent_harness.core.plan import ExecutionPlan
 
 
 class TestSantosSystemIdentity:

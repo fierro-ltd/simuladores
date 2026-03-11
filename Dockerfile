@@ -4,12 +4,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies first for better caching
+# Copy source and install
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
-
-# Copy application code
 COPY agent_harness/ agent_harness/
+RUN pip install --no-cache-dir .
 
 # Default command (overridden by docker-compose)
 CMD ["python", "-m", "agent_harness.gateway"]

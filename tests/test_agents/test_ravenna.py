@@ -1,6 +1,5 @@
 """Tests for Ravenna synthesizer agent."""
 
-import pytest
 
 from agent_harness.agents.ravenna import (
     RAVENNA_SYSTEM_IDENTITY,

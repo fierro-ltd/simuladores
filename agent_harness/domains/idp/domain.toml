@@ -1,0 +1,29 @@
+[domain]
+id = "idp"
+name = "Intelligent Document Processing"
+version = "1.0.0"
+
+[domain.models]
+investigator = "claude-opus-4-6"
+orchestrator = "claude-opus-4-6"
+executor = "claude-sonnet-4-6"
+synthesizer = "claude-sonnet-4-6"
+
+[domain.mcp]
+server_module = "agent_harness.domains.idp.mcp_server"
+server_port = 8002
+
+[domain.temporal]
+task_queue = "idp-operativo"
+workflow_id_prefix = "idp"
+
+[domain.memory]
+collection = "idp_domain"
+
+[domain.injection_guard]
+semantic_check = true
+semantic_threshold = 0.7
+
+[domain.limits]
+max_correction_attempts = 3
+compaction_threshold = 0.75

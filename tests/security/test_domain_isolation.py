@@ -5,7 +5,6 @@ import pytest
 from agent_harness.core.registry import OperativoRegistry
 from agent_harness.core.permissions import (
     GLOBAL_DENY_LIST,
-    PolicyChain,
 )
 from agent_harness.domains.dce.tools import list_operations as cpc_ops
 from agent_harness.domains.has.tools import list_operations as cee_ops

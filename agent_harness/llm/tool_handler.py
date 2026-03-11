@@ -9,8 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
+import logging
+
 from agent_harness.llm.client import AnthropicClient, MessageResult, TokenUsage, ToolCall
 from agent_harness.llm.loop_detection import ResourceEditTracker
+from agent_harness.prompt.compaction_client import CompactionClient
+from agent_harness.prompt.tool_result_guard import sanitize_tool_result
+
+_logger = logging.getLogger(__name__)
 
 # Type alias for tool handler functions
 ToolHandlerFunc = Callable[[dict[str, Any]], Awaitable[str]]
@@ -40,9 +46,13 @@ class ToolHandler:
         self,
         client: AnthropicClient,
         tool_handlers: dict[str, ToolHandlerFunc],
+        compaction_client: CompactionClient | None = None,
+        anthropic_raw_client: Any = None,
     ) -> None:
         self._client = client
         self._tool_handlers = tool_handlers
+        self._compaction_client = compaction_client
+        self._anthropic_raw_client = anthropic_raw_client
 
     async def run_loop(
         self,
@@ -83,6 +93,25 @@ class ToolHandler:
 
         for turn in range(max_turns):
             turns = turn + 1
+
+            # Check if compaction is needed before sending to LLM
+            if self._compaction_client and self._anthropic_raw_client:
+                total_tokens = sum(
+                    len(m.get("content", "").split())
+                    if isinstance(m.get("content", ""), str)
+                    else 0
+                    for m in current_messages
+                )
+                if self._compaction_client.needs_compaction(total_tokens):
+                    comp_result = await self._compaction_client.compact(
+                        self._anthropic_raw_client,
+                        current_prompt.get("system", ""),
+                        current_messages,
+                        operativo_id="unknown",
+                    )
+                    current_messages = comp_result.compacted_messages
+                    current_prompt["messages"] = current_messages
+
             result: MessageResult = await self._client.send_message(
                 current_prompt, model=model, tools=tools,
                 reasoning_effort=reasoning_effort,
@@ -142,6 +171,15 @@ class ToolHandler:
                             "is_error": True,
                         })
                         continue
+
+                    # Sanitize tool result before injecting into context
+                    sanitized = sanitize_tool_result(output, tool_name=tc.name, domain="")
+                    if sanitized.was_sanitized:
+                        _logger.warning(
+                            "Tool result sanitized: %s — %s", tc.name, sanitized.reason,
+                        )
+                        tool_errors += 1
+                    output = sanitized.content
 
                     # Loop detection: check if this resource is being over-called
                     if tracker is not None:
