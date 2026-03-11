@@ -30,6 +30,11 @@ from agent_harness.core.domain_registry import (
     DomainManifest,
     DomainRegistry,
 )
+from agent_harness.core.provider_config import (
+    GatewayType,
+    ProviderConfig,
+    load_provider_config,
+)
 from agent_harness.core.registry import (
     OperativoRegistry,
     RegistryEntry,
@@ -64,4 +69,8 @@ __all__ = [
     # domain registry
     "DomainManifest",
     "DomainRegistry",
+    # provider config
+    "GatewayType",
+    "ProviderConfig",
+    "load_provider_config",
 ]

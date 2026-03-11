@@ -1,0 +1,14 @@
+[provider]
+name = "openrouter"
+description = "OpenRouter multi-model gateway (cloud)"
+gateway = "openrouter"
+base_url = "https://openrouter.ai/api/v1"
+
+[roles]
+capable = "openrouter/anthropic/claude-opus-4-6"
+fast    = "openrouter/anthropic/claude-sonnet-4-6"
+extract = "openrouter/anthropic/claude-haiku-4-5"
+local   = "openrouter/anthropic/claude-haiku-4-5"
+
+[auth]
+type = "api_key"
