@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 
@@ -23,7 +23,7 @@ class OperativoFeedback:
     original_citations: list[str]
     corrected_citations: list[str]
     reviewer_notes: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass

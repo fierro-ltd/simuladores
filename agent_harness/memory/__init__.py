@@ -15,7 +15,10 @@ from agent_harness.memory.graph import (
     RelationType,
 )
 from agent_harness.memory.graph_store import InMemoryGraphStore
-from agent_harness.memory.mem0_backend import Mem0Config, Mem0DomainMemory, build_memory
+try:
+    from agent_harness.memory.mem0_backend import Mem0Config, Mem0DomainMemory, build_memory
+except ImportError:
+    pass  # mem0ai not installed — mem0 backend unavailable
 from agent_harness.memory.recall import MemoryRecall
 from agent_harness.memory.semantic_store import Pattern, SemanticStore
 from agent_harness.memory.session_store import SessionStore

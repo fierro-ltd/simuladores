@@ -57,17 +57,19 @@ class ToolSchemaRegistry:
         """Compare current tool schemas against the snapshot.
 
         Returns a list of SchemaChangeEvent for any tools whose schema
-        has changed since the snapshot was taken.
+        has changed, been added, or been removed since the snapshot.
         """
         tools = await client.list_tools()
         changes: list[SchemaChangeEvent] = []
+        current_tool_names: set[str] = set()
 
         for tool in tools:
+            current_tool_names.add(tool.name)
             current_hash = self._hash_schema(tool.inputSchema)
             original_hash = self._snapshots.get(tool.name)
 
             if original_hash is None:
-                # New tool appeared — also suspicious
+                # New tool appeared — suspicious
                 changes.append(SchemaChangeEvent(
                     tool_name=tool.name,
                     original_hash="",
@@ -78,6 +80,15 @@ class ToolSchemaRegistry:
                     tool_name=tool.name,
                     original_hash=original_hash,
                     current_hash=current_hash,
+                ))
+
+        # Detect removed tools — equally suspicious
+        for name, original_hash in self._snapshots.items():
+            if name not in current_tool_names:
+                changes.append(SchemaChangeEvent(
+                    tool_name=name,
+                    original_hash=original_hash,
+                    current_hash="",
                 ))
 
         return changes

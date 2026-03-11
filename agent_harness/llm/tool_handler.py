@@ -9,9 +9,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
+import logging
+
 from agent_harness.llm.client import AnthropicClient, MessageResult, TokenUsage, ToolCall
 from agent_harness.llm.loop_detection import ResourceEditTracker
 from agent_harness.prompt.compaction_client import CompactionClient
+from agent_harness.prompt.tool_result_guard import sanitize_tool_result
+
+_logger = logging.getLogger(__name__)
 
 # Type alias for tool handler functions
 ToolHandlerFunc = Callable[[dict[str, Any]], Awaitable[str]]
@@ -166,6 +171,15 @@ class ToolHandler:
                             "is_error": True,
                         })
                         continue
+
+                    # Sanitize tool result before injecting into context
+                    sanitized = sanitize_tool_result(output, tool_name=tc.name, domain="")
+                    if sanitized.was_sanitized:
+                        _logger.warning(
+                            "Tool result sanitized: %s — %s", tc.name, sanitized.reason,
+                        )
+                        tool_errors += 1
+                    output = sanitized.content
 
                     # Loop detection: check if this resource is being over-called
                     if tracker is not None:

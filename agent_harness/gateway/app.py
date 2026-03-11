@@ -456,8 +456,11 @@ def create_app() -> FastAPI:
         )
 
     @app.post("/operativos/{operativo_id}/feedback", status_code=202)
-    async def submit_feedback(operativo_id: str, body: FeedbackRequest) -> dict:
+    async def submit_feedback(
+        request: Request, operativo_id: str, body: FeedbackRequest,
+    ) -> dict:
         """Human reviewer submits feedback on a completed operativo."""
+        _check_auth_and_rate(request)
         return {"status": "feedback_queued", "operativo_id": operativo_id}
 
     @app.get("/operativo/{operativo_id}/status", response_model=StatusResponse)
