@@ -20,6 +20,18 @@ class GatewayType(str, Enum):
 
 
 @dataclass(frozen=True)
+class MemoryConfig:
+    """Memory backend config for provider-aware mem0 deployments."""
+
+    llm_provider: str = "anthropic"
+    llm_model: str = "claude-haiku-4-5-20251001"
+    llm_base_url: str | None = None
+    embedder_provider: str = "openai"
+    embedder_model: str = "text-embedding-3-small"
+    embedder_base_url: str | None = None
+
+
+@dataclass(frozen=True)
 class ProviderConfig:
     """Deployment-time binding between logical roles and model strings."""
 
@@ -28,6 +40,7 @@ class ProviderConfig:
     base_url: str | None
     roles: dict[str, str]   # logical role -> provider/model string
     auth_type: str
+    memory: MemoryConfig | None = None
 
     def resolve_model(self, role: str) -> str:
         """Resolve a logical role to a provider/model string."""
@@ -74,10 +87,23 @@ def load_provider_config(profile: str | None = None) -> ProviderConfig:
     with open(config_path, "rb") as f:
         raw = tomllib.load(f)
 
+    memory_cfg = None
+    if "memory" in raw:
+        m = raw["memory"]
+        memory_cfg = MemoryConfig(
+            llm_provider=m.get("llm_provider", "anthropic"),
+            llm_model=m.get("llm_model", "claude-haiku-4-5-20251001"),
+            llm_base_url=m.get("llm_base_url"),
+            embedder_provider=m.get("embedder_provider", "openai"),
+            embedder_model=m.get("embedder_model", "text-embedding-3-small"),
+            embedder_base_url=m.get("embedder_base_url"),
+        )
+
     return ProviderConfig(
         name=raw["provider"]["name"],
         gateway=GatewayType(raw["provider"]["gateway"]),
         base_url=raw["provider"].get("base_url"),
         roles=dict(raw["roles"]),
         auth_type=raw["auth"]["type"],
+        memory=memory_cfg,
     )

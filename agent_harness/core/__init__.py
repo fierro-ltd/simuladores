@@ -32,6 +32,7 @@ from agent_harness.core.domain_registry import (
 )
 from agent_harness.core.provider_config import (
     GatewayType,
+    MemoryConfig,
     ProviderConfig,
     load_provider_config,
 )
@@ -71,6 +72,7 @@ __all__ = [
     "DomainRegistry",
     # provider config
     "GatewayType",
+    "MemoryConfig",
     "ProviderConfig",
     "load_provider_config",
 ]
