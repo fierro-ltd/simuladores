@@ -10,7 +10,7 @@ import json
 import logging
 import re
 
-from agent_harness.agents.base import AGENT_EFFORTS, AGENT_MODELS, BaseAgent
+from agent_harness.agents.base import AGENT_EFFORTS, AGENT_MODELS, BaseAgent, resolve_agent_model
 from agent_harness.core.plan import AgentTask, ExecutionPlan
 from agent_harness.llm.client import AnthropicClient
 
@@ -135,8 +135,9 @@ class SantosPlanner:
 
     tools = None
 
-    def __init__(self, base_agent: BaseAgent) -> None:
+    def __init__(self, base_agent: BaseAgent, provider=None) -> None:
         self.base_agent = base_agent
+        self._provider = provider
 
     async def plan(
         self,
@@ -181,9 +182,11 @@ class SantosPlanner:
             session_state=session_state,
         )
 
+        model = resolve_agent_model("santos", self._provider)
+
         result = await client.send_message(
             prompt=prompt,
-            model=AGENT_MODELS["santos"],
+            model=model,
             reasoning_effort=AGENT_EFFORTS["santos"],
         )
 
