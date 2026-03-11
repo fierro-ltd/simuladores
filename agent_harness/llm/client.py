@@ -64,6 +64,11 @@ class AnthropicClient:
 
     Translates PromptBuilder.build() output into Anthropic API kwargs,
     applies cache_control directives, and returns MessageResult.
+
+    .. deprecated::
+        Use ``create_instructor_client()`` from ``agent_harness.llm.instructor_client``
+        for new code. This class will be removed in a future release once all agents
+        are migrated to instructor-based structured outputs.
     """
 
     def __init__(self, project_id: str, region: str = "europe-west1",

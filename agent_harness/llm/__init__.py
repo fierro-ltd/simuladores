@@ -9,6 +9,7 @@ from agent_harness.llm.client import (
     TokenUsage,
     ToolCall,
 )
+from agent_harness.llm.instructor_client import create_instructor_client
 from agent_harness.llm.loop_detection import ResourceEditTracker
 from agent_harness.llm.tool_handler import (
     ToolHandler,
@@ -25,4 +26,5 @@ __all__ = [
     "ToolHandler",
     "ToolHandlerFunc",
     "ToolLoopResult",
+    "create_instructor_client",
 ]
