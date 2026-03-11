@@ -177,6 +177,16 @@ def create_app() -> FastAPI:
         description="Operativo intake and status API.",
     )
 
+    # Observability
+    from agent_harness.observability.logfire_config import configure_observability
+
+    configure_observability(
+        service_name="simuladores",
+        environment="development",
+        send_to_logfire=False,
+        fastapi_app=app,
+    )
+
     # Store on app state for access in tests
     app.state.auth = auth
     app.state.rate_limiter = rate_limiter
