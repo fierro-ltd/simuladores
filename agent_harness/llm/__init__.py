@@ -1,6 +1,7 @@
 """LLM client layer — AnthropicClient, ToolHandler, and supporting types.
 
-All agents use this package to call Claude. Direct Anthropic SDK only (no LiteLLM).
+All agents use this package to call LLMs. Supports Anthropic Vertex, OpenRouter,
+and LiteLLM gateways via the provider-aware client factory.
 """
 
 from agent_harness.llm.client import (

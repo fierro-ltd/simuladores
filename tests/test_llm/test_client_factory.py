@@ -77,6 +77,8 @@ class TestOpenRouterGateway:
         mock_openai_cls.assert_called_once()
         call_kwargs = mock_openai_cls.call_args[1]
         assert call_kwargs["base_url"] == "https://openrouter.ai/api/v1"
+        assert call_kwargs["default_headers"]["HTTP-Referer"] == "https://fierro.co.uk"
+        assert call_kwargs["default_headers"]["X-Title"] == "Simuladores"
         mock_instructor.from_openai.assert_called_once()
 
     @patch("agent_harness.llm.client_factory.instructor")
