@@ -1,6 +1,6 @@
 # Simuladores
 
-**Current Version:** v1.8.0 | **Python:** 3.11+
+**Current Version:** v4.0.0 | **Python:** 3.11+
 
 Domain-locked, Temporal-orchestrated agent system for production automation of business processes. Inspired by [Los Simuladores](https://es.wikipedia.org/wiki/Los_simuladores), each operativo is planned and executed by a four-agent brigada — Santos, Medina, Lamponne, and Ravenna — resolving exactly one class of task for exactly one domain, deterministically, with an auditable trail.
 
@@ -53,7 +53,7 @@ graph TD
 | Decision | Rationale |
 |----------|-----------|
 | Wrapper, not rewrite | Zero risk to working DCE Backend. Incremental adoption. |
-| Anthropic SDK via Vertex AI | Fine-grained prompt cache control, compaction API via Google Vertex AI. |
+| Multi-provider LLM support | Single env var (`SIMULADORES_PROVIDER_PROFILE`) switches between Anthropic Vertex, OpenRouter, LiteLLM, or local Ollama. Agents use logical roles (`capable`, `fast`), resolved to provider-specific models at deployment time. |
 | Temporal only | No LangChain, no AutoGen. Durable workflows with crash recovery. |
 | Domain isolation by construction | DCE worker process has no HAS tools registered. Not config — code. |
 | Security by architecture | Injection resistance and credential isolation are structural, not prompt-based. |
@@ -63,14 +63,15 @@ graph TD
 | Component | Technology |
 |-----------|-----------|
 | Orchestration | Temporal.io |
-| Agents | Python 3.11+ with Anthropic SDK via Vertex AI |
+| Agents | Python 3.11+ with multi-provider LLM support |
+| LLM gateway | Anthropic Vertex AI (default), OpenRouter, LiteLLM, local Ollama |
+| LLM models | Logical roles: `capable` (Santos, Medina) / `fast` (Lamponne, Ravenna) — resolved per provider profile |
 | Semantic memory | PostgreSQL + pgvector |
 | Session state | StorageBackend (local filesystem / GCS) |
 | Code sandbox | Docker (rootless, no network) |
 | API gateway | FastAPI |
-| LLM models | Claude Opus 4.6 (Santos, Medina) / Claude Sonnet 4.6 (Lamponne, Ravenna) |
 
-Open source stack. Only external API dependency: Anthropic via Google Vertex AI.
+Open source stack. Default LLM provider: Anthropic via Google Vertex AI. Fully air-gapped deployments supported via LiteLLM + vLLM/Ollama. See [Provider Compatibility Matrix](docs/PROVIDERS.md).
 
 ## In-Scope Domains
 
@@ -86,14 +87,21 @@ Open source stack. Only external API dependency: Anthropic via Google Vertex AI.
 
 - Python 3.11+
 - Docker & Docker Compose
-- Google Cloud project with Vertex AI enabled
+- LLM provider credentials (see [Provider Compatibility Matrix](docs/PROVIDERS.md))
 
 ### Quick Start
 
 ```bash
 # Configure environment
 cp .env.example .env
-# Edit .env with your GOOGLE_CLOUD_PROJECT and VERTEX_REGION
+# Edit .env with your credentials
+
+# Select provider profile (default: anthropic-vertex)
+export SIMULADORES_PROVIDER_PROFILE=anthropic-vertex  # Vertex AI (production)
+# export SIMULADORES_PROVIDER_PROFILE=openrouter      # OpenRouter cloud gateway
+# export SIMULADORES_PROVIDER_PROFILE=litellm-proxy    # Self-hosted LiteLLM
+# export SIMULADORES_PROVIDER_PROFILE=hospital-airgapped # Air-gapped hospital
+# export SIMULADORES_PROVIDER_PROFILE=local-ollama     # Local dev, no API keys
 
 # Start infrastructure
 docker compose up -d
@@ -131,32 +139,39 @@ This generates rendered SVGs from all markdown Mermaid blocks into `docs/diagram
 
 ```
 simuladores/
-├── core/              Base classes, permissions, registry
-├── prompt/            Prompt assembly (most critical), injection guard, compaction
-├── memory/            Domain, session, and semantic memory stores
-├── agents/            Santos, Medina, Lamponne, Ravenna executors
-├── llm/               AnthropicClient (Vertex AI), ToolHandler
-├── sandbox/           Docker v1 + Monty v2 stub (stable interface)
-├── domains/dce/       DCE domain: memory file, tools, worker, operativo
-├── domains/idp/       IDP domain: document extraction with plugins
-├── workflows/         Temporal workflow definitions
-├── activities/        Temporal activities (@activity.defn + factory)
-├── workers/           Domain Temporal workers (DCE, IDP)
-├── storage/           StorageBackend protocol (local/GCS)
-├── gateway/           FastAPI intake, dispatch, status
-├── observability/     Logging, metrics, benchmarks
-├── tests/             Cache, injection, integration tests + fixtures
-└── docs/              Architecture and design documents
+├── agent_harness/
+│   ├── core/              Base classes, permissions, registry, provider config
+│   ├── prompt/            Prompt assembly (most critical), injection guard, cache adapter
+│   ├── memory/            Domain, session, and semantic memory stores
+│   ├── agents/            Santos, Medina, Lamponne, Ravenna (provider-aware)
+│   ├── llm/               Client factory (multi-provider), ToolHandler
+│   ├── sandbox/           Docker v1 + Monty v2 stub (stable interface)
+│   ├── domains/dce/       DCE domain: memory file, tools, worker, operativo
+│   ├── domains/idp/       IDP domain: document extraction with plugins
+│   ├── workflows/         Temporal workflow definitions
+│   ├── activities/        Temporal activities (@activity.defn + factory)
+│   ├── workers/           Domain Temporal workers (DCE, IDP)
+│   ├── storage/           StorageBackend protocol (local/GCS)
+│   ├── gateway/           FastAPI intake, dispatch, status
+│   └── observability/     Logging, metrics, benchmarks
+├── config/
+│   └── providers/         TOML provider profiles (anthropic-vertex, openrouter, etc.)
+├── infra/
+│   ├── litellm/           LiteLLM proxy configs (cloud, hospital, ollama)
+│   └── vllm/              vLLM hospital deployment config
+├── tests/                 Cache, injection, integration, provider tests + fixtures
+│   └── evals/             Multi-provider promptfoo regression suite
+└── docs/                  Architecture and design documents
 ```
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Data Flow](docs/DATA_FLOW.md)
-- [Vision](docs/VISION.md)
-- [Diagram Rendering](docs/DIAGRAMS.md)
-- [Changelog](CHANGELOG.md)
 - [Architecture](docs/ARCHITECTURE.md) — full technical design
+- [Data Flow](docs/DATA_FLOW.md) — phase-by-phase data flow
+- [Vision](docs/VISION.md) — project vision and roadmap
+- [Provider Compatibility Matrix](docs/PROVIDERS.md) — multi-provider deployment guide
+- [Diagram Rendering](docs/DIAGRAMS.md) — Mermaid diagram tooling
+- [Changelog](CHANGELOG.md)
 
 ## Related Systems
 
@@ -167,16 +182,15 @@ simuladores/
 
 ## Roadmap
 
-| Version | Sprint | Focus |
-|---------|--------|-------|
-| v0.1-v0.6 | 1-6 | Foundation: core types, PromptBuilder, injection guard, agents, memory, domains |
-| v0.7-v1.0 | 7-13 | Runtime: SDK client, Temporal workflows, activities, DCE worker, gateway |
-| v1.1 | 14-15 | Cortex Bulletin, HAS domain, IDP checklist |
-| v1.2 | 16-18 | Security hardening, GCS storage, cache monitoring, semantic patterns |
-| v1.3 | 19 | Vertex AI migration (AsyncAnthropicVertex) |
-| v1.4 | 20 | DCE production: real PDF extraction via DCE Backend, e2e test |
-| v1.9 | 24 | IDP domain connected to IDP Platform (12 operations, 14 HTTP handlers) |
-| v2.0 | Next | Compaction API integration, PostgresGraphStore |
+| Version | Focus |
+|---------|-------|
+| v0.1-v1.0 | Foundation + Runtime: core types, agents, memory, Temporal workflows, gateway |
+| v1.1-v1.4 | Expansion: Cortex Bulletin, security hardening, Vertex AI, DCE production |
+| v1.9 | IDP domain connected to IDP Platform |
+| v3.0 | Dependency swap refactor: instructor, Pydantic models, structured output |
+| **v4.0** | **Multi-provider LLM: logical roles, provider profiles, air-gapped support** |
+| v4.1 | Compaction API integration, PostgresGraphStore |
+| v5.0 | HAS domain production, dispatch integration |
 
 ### Sources & References
 

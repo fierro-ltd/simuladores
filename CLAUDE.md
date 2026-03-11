@@ -10,7 +10,7 @@ Simuladores adds intelligent planning (Santos), document investigation (Medina),
 
 - **Python 3.11+** — core language
 - **Temporal.io** — workflow orchestration (the only orchestration layer, no LangChain/AutoGen)
-- **Anthropic Python SDK (Vertex AI)** — `anthropic[vertex]` via Google Vertex AI. Prompt caching, compaction API, cache hit monitoring all work through Vertex.
+- **Multi-provider LLM** — default: Anthropic via Vertex AI. Supports OpenRouter, LiteLLM, local Ollama/vLLM via `SIMULADORES_PROVIDER_PROFILE` env var. Provider profiles in `config/providers/`.
 - **PostgreSQL + pgvector** — semantic memory (cross-job pattern storage)
 - **Docker** — sandbox for code execution (rootless, no network, ephemeral)
 - **FastAPI** — gateway API
@@ -32,30 +32,33 @@ These are non-negotiable. Do not introduce code that violates them:
 ## Key Directories
 
 ```
-core/         Base classes — Operativo, permissions, registry
-prompt/       MOST CRITICAL — prompt assembly, injection guard, compaction
-memory/       Five-layer memory: domain, session, semantic stores
-agents/       Santos, Medina, Lamponne, Ravenna implementations
-sandbox/      Docker v1 backend, Monty v2 stub, stable SandboxBackend interface
-domains/dce/  DCE domain: DCE.md, tools manifest, worker, operativo
-domains/idp/  IDP domain: IDP.md, tools manifest, worker, operativo
-workflows/    Temporal workflow definitions
-activities/   Temporal activity implementations (where PolicyChain runs)
-storage/      StorageBackend protocol + local/GCS implementations
-gateway/      API intake and dispatch
-tests/        cache_tests (CI-critical), injection_tests, fixtures, integration
+core/              Base classes — Operativo, permissions, registry, provider config
+prompt/            MOST CRITICAL — prompt assembly, injection guard, cache adapter
+memory/            Five-layer memory: domain, session, semantic stores
+agents/            Santos, Medina, Lamponne, Ravenna (provider-aware)
+llm/               Client factory (multi-provider), ToolHandler
+sandbox/           Docker v1 backend, Monty v2 stub, stable SandboxBackend interface
+domains/dce/       DCE domain: DCE.md, tools manifest, worker, operativo
+domains/idp/       IDP domain: IDP.md, tools manifest, worker, operativo
+workflows/         Temporal workflow definitions
+activities/        Temporal activity implementations (where PolicyChain runs)
+storage/           StorageBackend protocol + local/GCS implementations
+gateway/           API intake and dispatch
+config/providers/  TOML provider profiles (anthropic-vertex, openrouter, etc.)
+infra/             LiteLLM proxy and vLLM deployment configs
+tests/             cache_tests (CI-critical), injection_tests, provider tests, evals
 ```
 
 ## Agent Model
 
-| Agent | Code | Model | Role |
-|-------|------|-------|------|
-| Santos | `agents/santos.py` | Opus 4.6 | Plans, QA review, auto-correction. No tool calls during planning. |
-| Medina | `agents/medina.py` | Opus 4.6 | Document reading, injection scanning. Opus mandatory for injection resistance. |
-| Lamponne | `agents/lamponne.py` | Sonnet 4.6 | Executes via discover_api/execute_api. Inputs always controlled. |
-| Ravenna | `agents/ravenna.py` | Sonnet 4.6 | Synthesizes output. Permission-gated delivery. |
+| Agent | Code | Logical Role | Default Model | Role |
+|-------|------|-------------|---------------|------|
+| Santos | `agents/santos.py` | `capable` | Opus 4.6 | Plans, QA review, auto-correction. No tool calls during planning. |
+| Medina | `agents/medina.py` | `capable` | Opus 4.6 | Document reading, injection scanning. Capable role mandatory for injection resistance. |
+| Lamponne | `agents/lamponne.py` | `fast` | Sonnet 4.6 | Executes via discover_api/execute_api. Inputs always controlled. |
+| Ravenna | `agents/ravenna.py` | `fast` | Sonnet 4.6 | Synthesizes output. Permission-gated delivery. |
 
-Model assignments are hardcoded in code, not configurable.
+Agents use logical roles resolved to concrete models by the active provider profile. Default models shown above are for the `anthropic-vertex` profile.
 
 ## Running Locally
 

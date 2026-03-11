@@ -20,13 +20,13 @@ Simuladores is built on six principles that constrain every design decision:
 
 **Temporal-only orchestration.** No LangChain, no AutoGen, no custom DAG runners. Temporal provides workflow durability, activity retries, signal-based human gates, and cron scheduling. A worker crash mid-phase resumes from the last completed activity checkpoint. Durability over flexibility.
 
-**Anthropic SDK direct, via Vertex AI.** Simuladores uses the `anthropic[vertex]` SDK — the same API surface as the direct Anthropic SDK, authenticated through Google Cloud ADC. This gives us prompt caching with manual `cache_control` breakpoints, the compaction API for long conversations, and per-agent cache hit monitoring. No abstraction layers between the brigada and the model.
+**Multi-provider LLM support.** Agents reference logical roles (`capable` for deep reasoning, `fast` for execution) rather than specific models. A single environment variable (`SIMULADORES_PROVIDER_PROFILE`) selects the deployment profile — Anthropic Vertex AI (default, with prompt caching and compaction API), OpenRouter (cloud gateway for validation), LiteLLM (self-hosted proxy supporting 100+ backends), or local Ollama/vLLM (air-gapped deployments). The provider abstraction preserves Anthropic-specific features like cache control when available while gracefully degrading for providers that don't support them.
 
 **Security by architecture, not by prompt.** Injection resistance is structural: Medina scans all extracted content before it passes downstream, the tool policy chain is evaluated deterministically before any tool executes, and domain memory files are read-only at runtime. The LLM cannot override any of these controls.
 
 **Always delivers.** Auto-correction loops run up to three attempts. If blocking issues remain, Simuladores delivers with a NEEDS_REVIEW flag and documents every finding. Silent failure is not an option — a flagged result is always better than no result.
 
-**Open-source stack.** The only external dependency is Anthropic models via Google Vertex AI. Everything else — Temporal, PostgreSQL, pgvector, Docker, FastAPI — is open source and self-hostable.
+**Open-source stack.** The entire stack — Temporal, PostgreSQL, pgvector, Docker, FastAPI — is open source and self-hostable. Default LLM provider is Anthropic via Vertex AI, but fully air-gapped deployments are supported via LiteLLM + vLLM/Ollama with no external API dependencies.
 
 ---
 
@@ -63,40 +63,37 @@ Simuladores went from architecture design to a production-ready DCE pipeline in 
 
 ---
 
-## 4. Current State (v1.4.0)
+## 4. Current State (v4.0.0)
 
-The DCE domain is fully operational. Real PDF extraction flows through the DCE Backend's Temporal activities, orchestrated by the harness's four-agent lifecycle.
+The DCE domain is fully operational with multi-provider LLM support. Real PDF extraction flows through the DCE Backend's Temporal activities, orchestrated by the harness's four-agent lifecycle across any supported LLM backend.
 
 **What works today:**
 
-- **1,034 tests passing** — cache ordering tests (CI-critical), injection resistance tests (10+ synthetic poisoned documents), integration tests, and end-to-end tests with real compliance PDFs.
-- **Vertex AI integration** — `AsyncAnthropicVertex` with Google Cloud ADC authentication. No API keys to manage. Same SDK surface as the direct Anthropic API.
+- **1,299 tests passing** — cache ordering tests (CI-critical), injection resistance tests (10+ synthetic poisoned documents), provider integration tests, integration tests, and end-to-end tests with real compliance PDFs.
+- **Multi-provider LLM support** — agents use logical roles (`capable`, `fast`) resolved to provider-specific models via TOML profiles. Five provider profiles: Anthropic Vertex AI (default), OpenRouter, LiteLLM, hospital-airgapped, local-ollama.
+- **Air-gapped deployments** — fully local inference via LiteLLM + vLLM/Ollama with provider-aware mem0 memory backend. Zero external API dependencies for HIPAA/GDPR compliance.
 - **Four agents in full operativo lifecycle** — Santos plans and reviews, Medina investigates and scans for injection, Lamponne executes via the DCE Backend's activities, Ravenna synthesizes the final output.
-- **Cross-session memory** — Cortex Bulletin generates periodic summaries of patterns across operativos. MemoryRecall with InMemoryGraphStore provides typed memory (Facts, Decisions, Patterns, Errors) with semantic search.
+- **Cross-session memory** — Cortex Bulletin generates periodic summaries of patterns across operativos. MemoryRecall with InMemoryGraphStore provides typed memory (Facts, Decisions, Patterns, Errors) with semantic search. Provider-aware memory config for air-gapped deployments.
 - **FastAPI gateway** — authentication, rate limiting, audit logging. Temporal workflow submission with immediate status URL response.
-- **DCE Backend activity mapping** — `extract_pdf_text`, `extract_cpc_data`, `generate_isam_product`, `navigate_decision_tree`, `validate_cpc_elements`, and `merge_assessment` all dispatch to the Robot's real task queues.
+- **Multi-provider eval suite** — promptfoo regression tests validate verdict agreement across provider profiles (≥95% threshold for production readiness).
 
 ---
 
 ## 5. What's Next
 
-### v1.5 — Compaction & Persistent Memory
+### v4.1 — Compaction & Persistent Memory
 
 Wire the Anthropic compaction API (`compact-2026-01-12`) into the ToolHandler for long conversations. When working messages reach 80% of the context window, server-side summarization kicks in — preserving the reasoning chain while reclaiming token budget.
 
-Replace InMemoryGraphStore with PostgresGraphStore backed by pgvector. Cross-session patterns — normalization rules, common error types, domain-specific quirks — persist across worker restarts and scale across instances. Voyage AI embeddings (Anthropic-recommended) power the semantic similarity search.
+Replace InMemoryGraphStore with PostgresGraphStore backed by pgvector. Cross-session patterns — normalization rules, common error types, domain-specific quirks — persist across worker restarts and scale across instances.
 
-### v2.0 — HAS Domain
+### v5.0 — HAS Domain & Dispatch Integration
 
-Healthcare AI Suite (healthcare AI processing) becomes the second domain running on the same harness pattern. HAS has its own task queues, guidelines-as-YAML rules, and its own Temporal workers. This is the validation that the multi-domain architecture works in practice — that adding a domain means adding a directory under `domains/`, not modifying core infrastructure.
+Healthcare AI Suite becomes the next domain running on the same harness pattern. HAS has its own task queues, guidelines-as-YAML rules, and its own Temporal workers. dispatch integration closes the loop: emails arrive, get classified and routed, Simuladores processes them and delivers results via callback.
 
-### v2.5 — IDP Production & Dispatch Integration
+### v6.0 — Scale
 
-IDP domain goes to production with full extraction pipeline. dispatch integration closes the loop: emails arrive at `ai@accelerator.ai`, Gemini Flash classifies and routes them, Simuladores picks up the job, processes it, and delivers the result via callback. The full production pipeline: email to dispatch to Simuladores to result.
-
-### v3.0 — Scale
-
-Multiple Simuladores instances per domain, horizontally scaled via Temporal's native worker distribution. Monty v2 sandbox (MicroVM-based, replacing Docker) for sub-microsecond code execution startup. Production observability with Grafana dashboards and alerting on cache hit rate drops, QA failure rates, and operativo latency percentiles.
+Multiple Simuladores instances per domain, horizontally scaled via Temporal's native worker distribution. Monty v2 sandbox for sub-microsecond code execution startup. Production observability with Grafana dashboards and alerting on cache hit rate drops, QA failure rates, and operativo latency percentiles.
 
 ---
 
@@ -112,6 +109,7 @@ Multiple Simuladores instances per domain, horizontally scaled via Temporal's na
 | Prompt caching | [Anthropic docs](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching) | Manual cache_control breakpoints + auto-caching backup |
 | Compaction API | [Anthropic compaction](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#prompt-cache-types) | Planned: compact-2026-01-12 for long tool-use conversations |
 | Vertex AI integration | [Anthropic on Vertex](https://docs.anthropic.com/en/api/claude-on-vertex-ai) | AsyncAnthropicVertex — same SDK surface, Google Cloud ADC auth |
+| Multi-provider support | Provider profiles + client factory | Logical roles → provider-specific models via TOML config and gateway abstraction |
 | Semantic embeddings | Voyage AI (Anthropic-recommended) | Planned: pgvector with Voyage AI embeddings for persistent memory |
 
 ---

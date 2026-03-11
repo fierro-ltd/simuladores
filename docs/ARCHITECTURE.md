@@ -40,15 +40,15 @@ These invariants are enforced in code, not by convention:
 
 ## 2. Agent Model -- The Brigada
 
-Four agents, each implemented as a Temporal Activity that calls Claude via the Anthropic Python SDK (through Vertex AI). Model assignments are **hardcoded** in `agents/base.py`, not configurable.
+Four agents, each implemented as a Temporal Activity. Agents reference **logical roles** (`capable`, `fast`) instead of hardcoded model strings. The actual model is resolved at deployment time by the active provider profile (`SIMULADORES_PROVIDER_PROFILE`).
 
 ```mermaid
 graph LR
     subgraph "The Brigada"
-        S["Santos<br/>claude-opus-4-6<br/>Planner + QA"]
-        M["Medina<br/>claude-opus-4-6<br/>Investigator"]
-        L["Lamponne<br/>claude-sonnet-4-6<br/>Executor"]
-        R["Ravenna<br/>claude-sonnet-4-6<br/>Synthesizer"]
+        S["Santos<br/>role: capable<br/>Planner + QA"]
+        M["Medina<br/>role: capable<br/>Investigator"]
+        L["Lamponne<br/>role: fast<br/>Executor"]
+        R["Ravenna<br/>role: fast<br/>Synthesizer"]
     end
 
     S -->|"PLAN.md"| M
@@ -57,12 +57,25 @@ graph LR
     S -->|"qa_report.json"| R
 ```
 
-| Agent | Internal Name | External Name | Model | Reasoning Effort | Role |
-|-------|--------------|---------------|-------|-----------------|------|
-| Santos | `agents/santos.py` | Orchestrator | `claude-opus-4-6` | high | Plans operativo (Phase 1), QA review (Phase 4), auto-correction. **No tool calls during planning** -- pure reasoning. |
-| Medina | `agents/medina.py` | Investigator | `claude-opus-4-6` | high | Reads input documents, runs injection scanner before any content is passed downstream, builds `input_snapshot.json`. **Opus mandatory** -- injection resistance requires top-tier reasoning. |
-| Lamponne | `agents/lamponne.py` | Executor | `claude-sonnet-4-6` | medium | Calls domain APIs via `discover_api`/`execute_api`. Inputs are always controlled by upstream agents -- Sonnet sufficient. |
-| Ravenna | `agents/ravenna.py` | Synthesizer | `claude-sonnet-4-6` | medium | Assembles final `structured_result.json` from all phase outputs. Permission-gated delivery. No untrusted input at this stage. |
+| Agent | Internal Name | External Name | Logical Role | Reasoning Effort | Role |
+|-------|--------------|---------------|-------------|-----------------|------|
+| Santos | `agents/santos.py` | Orchestrator | `capable` | high | Plans operativo (Phase 1), QA review (Phase 4), auto-correction. **No tool calls during planning** -- pure reasoning. |
+| Medina | `agents/medina.py` | Investigator | `capable` | high | Reads input documents, runs injection scanner before any content is passed downstream, builds `input_snapshot.json`. **Capable role mandatory** -- injection resistance requires top-tier reasoning. |
+| Lamponne | `agents/lamponne.py` | Executor | `fast` | medium | Calls domain APIs via `discover_api`/`execute_api`. Inputs are always controlled by upstream agents. |
+| Ravenna | `agents/ravenna.py` | Synthesizer | `fast` | medium | Assembles final `structured_result.json` from all phase outputs. Permission-gated delivery. No untrusted input at this stage. |
+
+### Model Resolution
+
+Model resolution is handled by `resolve_agent_model()` in `agents/base.py`. When a `ProviderConfig` is supplied, agent names map to logical roles via `AGENT_ROLES`, then the provider profile resolves the role to a concrete model string. Without a provider config, the legacy `AGENT_MODELS` dictionary is used for backward compatibility.
+
+```python
+AGENT_ROLES: dict[str, str] = {
+    "santos": "capable",    # Planning + QA need deep reasoning
+    "medina": "capable",    # Injection scanning needs care
+    "lamponne": "fast",     # Executing a known plan
+    "ravenna": "fast",      # Assembly, not reasoning
+}
+```
 
 The dual naming convention (Los Simuladores internally, functional names externally) drives system prompt personality and clarifies role boundaries. The core concept -- **Operativo** -- is retained in all contexts.
 
@@ -474,10 +487,13 @@ graph TB
         TUI["Temporal UI<br/>:8233"]
         WK["DCE Worker<br/>dce-operativo queue"]
         GW["FastAPI Gateway<br/>:8000"]
+        LLM_GW["LiteLLM Proxy<br/>:4000<br/>(optional)"]
     end
 
-    subgraph "External"
-        ANTH["Anthropic API<br/>(via Vertex AI)<br/>Only external API"]
+    subgraph "LLM Provider (configurable)"
+        ANTH["Anthropic Vertex AI<br/>(default)"]
+        OR["OpenRouter"]
+        LOCAL["Local vLLM / Ollama<br/>(air-gapped)"]
     end
 
     subgraph "DCE Backend (Separate Deployment)"
@@ -486,12 +502,27 @@ graph TB
 
     GW -->|"Submit workflow"| TMP
     TMP -->|"Dispatch activities"| WK
-    WK -->|"LLM calls"| ANTH
+    WK -->|"LLM calls (direct)"| ANTH
+    WK -->|"LLM calls (routed)"| OR
+    WK -->|"LLM calls (proxy)"| LLM_GW
+    LLM_GW -->|"Forward"| LOCAL
     WK -->|"discover_api / execute_api"| CPCR
     WK -->|"Read/write patterns"| PG
     TMP -->|"Workflow state"| PG
     TUI -->|"Observe"| TMP
 ```
+
+### Provider Configuration
+
+LLM provider selection is controlled by a single environment variable:
+
+```bash
+SIMULADORES_PROVIDER_PROFILE=anthropic-vertex  # default
+```
+
+Provider profiles are TOML files under `config/providers/` that map logical roles to concrete model strings and configure the gateway type (direct, openrouter, litellm). See [Provider Compatibility Matrix](PROVIDERS.md) for the full list.
+
+The client factory (`llm/client_factory.py`) uses gateway type to instantiate the appropriate SDK client: `AsyncAnthropicVertex` for direct gateway, `AsyncOpenAI` for OpenRouter and LiteLLM gateways. The cache adapter (`prompt/cache_adapter.py`) handles Anthropic-specific `cache_control` headers, stripping them for providers that don't support prompt caching.
 
 ### Docker Compose Services
 
@@ -500,6 +531,7 @@ graph TB
 | `postgresql` | `pgvector/pgvector:pg17` | 5432 | Semantic memory (pgvector) + Temporal persistence |
 | `temporal` | `temporalio/auto-setup:latest` | 7233 | Workflow orchestration |
 | `temporal-ui` | `temporalio/ui:latest` | 8233 | Temporal Web UI |
+| `litellm-proxy` | `ghcr.io/berriai/litellm:main-latest` | 4000 | LiteLLM proxy (optional, for LiteLLM/hospital profiles) |
 | `worker` | Custom build | -- | DCE worker (`python -m agent_harness.workers.dce`) |
 | `gateway` | Custom build | 8000 | FastAPI intake API |
 
@@ -530,9 +562,11 @@ agent_harness/
     permissions.py             PermissionLevel, PolicyChain, GLOBAL_DENY_LIST
     registry.py                task_type -> Temporal Workflow mapping
     errors.py                  Custom error types
+    provider_config.py         ProviderConfig, GatewayType, load_provider_config
   prompt/                      MOST CRITICAL PACKAGE
     builder.py                 PromptBuilder: L0-L4 strict ordering, PromptOrderViolation
     injection_guard.py         Medina's scanner: phrases, imperatives, roles, exfil, base64, homoglyphs
+    cache_adapter.py           Cross-provider cache_control header handling
     compactor.py               Anthropic compaction API wrapper
     compaction_client.py       Compaction API client
   memory/
@@ -546,7 +580,7 @@ agent_harness/
     bulletin_store.py          InMemoryBulletinStore: Cortex cross-session memory
     embeddings.py              Embedding utilities
   agents/
-    base.py                    BaseAgent, AgentConfig, AGENT_MODELS, AGENT_EFFORTS
+    base.py                    BaseAgent, AgentConfig, AGENT_MODELS, AGENT_ROLES, AGENT_EFFORTS
     santos.py                  SantosPlanner: plan-only, no tools, Opus
     medina.py                  MedinaInvestigator: extract + scan + snapshot, Opus
     lamponne.py                LamponneExecutor: discover_api + execute_api, Sonnet
@@ -587,6 +621,7 @@ agent_harness/
     implementations.py         Activity function registration
   llm/
     client.py                  AnthropicClient: direct SDK wrapper
+    client_factory.py          Multi-provider client factory (Vertex, OpenRouter, LiteLLM)
     tool_handler.py            ToolHandler: LLM tool-use loop
     loop_detection.py          Detect stuck tool loops
   gateway/
@@ -613,11 +648,22 @@ agent_harness/
     metrics.py                 Metrics collection
     logging.py                 Structured logging
   config.py                    Configuration loading
+config/
+  providers/                   TOML provider profiles
+    anthropic-vertex.toml      Default: Anthropic via Vertex AI (direct gateway)
+    openrouter.toml            OpenRouter cloud gateway
+    litellm-proxy.toml         Self-hosted LiteLLM proxy
+    hospital-airgapped.toml    Air-gapped hospital (LiteLLM + vLLM + local memory)
+    local-ollama.toml          Local dev (Ollama, no API keys)
+infra/
+  litellm/                     LiteLLM proxy configurations
+  vllm/                        vLLM hospital deployment config
 tests/
   cache_tests/                 Prompt layer ordering validation (CI-critical)
   injection_tests/             10+ synthetic poisoned documents
   fixtures/                    10 sample compliance PDFs + product photos
   integration/                 End-to-end operativo tests per domain
+  evals/                       Multi-provider promptfoo regression suite
 ```
 
 ---
@@ -628,10 +674,10 @@ tests/
 |----------|--------|-----------|--------|
 | Orchestration | Temporal.io only | Durable execution, Activity checkpointing, no framework lock-in | -- |
 | Wrapper, not rewrite | Wrap DCE Backend's 28 activities | Zero risk to working system. Incremental adoption. Fallback available. | -- |
-| LLM SDK | Direct Anthropic SDK (via Vertex AI), not LiteLLM | Fine-grained cache control, compaction API, cache hit monitoring | -- |
+| LLM SDK | Multi-provider via logical roles + provider profiles | Default: Anthropic SDK (Vertex AI) for cache control and compaction. Supports OpenRouter, LiteLLM, and local models via gateway abstraction. | -- |
 | Prompt layer ordering | L0, L1, L3, L2, L4 (static first) | Maximize Anthropic prompt cache hits across sessions | Thariq (Anthropic) |
 | Reasoning effort | High for Santos/Medina, medium for Lamponne/Ravenna | Reasoning sandwich: deep thinking at plan/QA, efficient at execution | LangChain harness engineering blog |
-| Model assignment | Opus for Santos/Medina, Sonnet for Lamponne/Ravenna | Injection resistance requires top-tier reasoning. Controlled inputs safe on Sonnet. | -- |
+| Model assignment | `capable` role for Santos/Medina, `fast` role for Lamponne/Ravenna | Injection resistance requires top-tier reasoning. Controlled inputs safe on lighter models. Concrete models resolved per provider profile. | -- |
 | Compaction | Anthropic compaction API primary, Session Bridge fallback | Server-side summarization reduces complexity. Custom fallback for edge cases. | -- |
 | Storage abstraction | `StorageBackend` protocol (local/GCS) | Simple dev setup (no cloud credentials). Clean prod migration. | -- |
 | Memory architecture | Five layers with graph-based semantic store | Cross-job learning, typed nodes, Cortex bulletins | Spacebot cortex memory model |
