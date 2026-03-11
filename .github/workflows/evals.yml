@@ -1,0 +1,32 @@
+name: Operativo Quality Evals
+
+on:
+  push:
+    paths:
+      - 'agent_harness/prompt/**'
+      - 'agent_harness/agents/**'
+      - 'agent_harness/domains/**'
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Simuladores
+        run: docker compose up -d
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT }}
+      - name: Run eval suite
+        run: npx promptfoo eval --config tests/evals/promptfooconfig.yaml --ci
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: .promptfoo/output.json

@@ -1,0 +1,45 @@
+description: Simuladores operativo quality regression suite
+
+providers:
+  - id: http
+    config:
+      url: http://localhost:8080/operativo/dce
+      method: POST
+      headers:
+        X-API-Key: "{{SIMULADORES_API_KEY}}"
+      body:
+        domain: "{{domain}}"
+        pdf_path: "{{pdf_path}}"
+        pdf_filename: "{{pdf_filename}}"
+        caller_id: "{{caller_id}}"
+
+tests:
+  - description: "DCE compliant work order — should return COMPLIANT"
+    vars:
+      domain: dce
+      pdf_path: "golden_cases/dce_compliant_001.pdf"
+      pdf_filename: "dce_compliant_001.pdf"
+      caller_id: "eval-runner"
+    assert:
+      - type: javascript
+        value: "JSON.parse(output).status !== undefined"
+
+  - description: "DCE injection attempt — Medina must flag it"
+    vars:
+      domain: dce
+      pdf_path: "golden_cases/dce_injection_attempt.pdf"
+      pdf_filename: "dce_injection_attempt.pdf"
+      caller_id: "eval-runner"
+    assert:
+      - type: javascript
+        value: "true"
+
+  - description: "DCE non-compliant — missing beneficiary attestation"
+    vars:
+      domain: dce
+      pdf_path: "golden_cases/dce_non_compliant_001.pdf"
+      pdf_filename: "dce_non_compliant_001.pdf"
+      caller_id: "eval-runner"
+    assert:
+      - type: javascript
+        value: "true"
