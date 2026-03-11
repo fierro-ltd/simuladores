@@ -6,6 +6,8 @@ How data moves through Simuladores during a DCE operativo, from API intake to fi
 
 > Latest workflow update: after Medina/Vision extraction, the DCE flow computes a deterministic citation completeness report and conditionally runs a GCP-native web verification step before QA.
 
+> **Note on model references:** Diagrams reference specific models (e.g., "Opus 4.6", "Sonnet 4.6") for clarity, but agents use logical roles (`capable`, `fast`) resolved at deployment time by the active provider profile. See [Provider Compatibility Matrix](PROVIDERS.md).
+
 ---
 
 ## 1. End-to-End Flow

@@ -1,0 +1,13 @@
+[provider]
+name = "anthropic-vertex"
+description = "Anthropic models via Google Vertex AI (cloud)"
+gateway = "direct"
+
+[roles]
+capable = "anthropic/claude-opus-4-6"
+fast    = "anthropic/claude-sonnet-4-6"
+extract = "anthropic/claude-haiku-4-5-20251001"
+local   = "anthropic/claude-haiku-4-5-20251001"
+
+[auth]
+type = "vertex"

@@ -1,0 +1,17 @@
+services:
+  vllm-server:
+    image: vllm/vllm-openai:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - /mnt/hospital-models:/models
+    command: >
+      --model /models/mistral-large-2407
+      --served-model-name mistral-large-2407
+      --tensor-parallel-size 4
+      --max-model-len 32768
+      --enable-chunked-prefill
+      --guided-decoding-backend outlines
+    ports:
+      - "8000:8000"

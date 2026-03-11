@@ -1,0 +1,14 @@
+[provider]
+name = "litellm-proxy"
+description = "Self-hosted LiteLLM proxy (on-premise or VPC)"
+gateway = "litellm"
+base_url = "http://litellm-proxy:4000"
+
+[roles]
+capable = "simuladores-capable"
+fast    = "simuladores-fast"
+extract = "simuladores-extract"
+local   = "simuladores-local"
+
+[auth]
+type = "api_key"

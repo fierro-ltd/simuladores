@@ -1,0 +1,14 @@
+[provider]
+name = "local-ollama"
+description = "Fully local inference via Ollama (dev only)"
+gateway = "litellm"
+base_url = "http://localhost:4000"
+
+[roles]
+capable = "simuladores-capable"
+fast    = "simuladores-fast"
+extract = "simuladores-extract"
+local   = "simuladores-local"
+
+[auth]
+type = "api_key"

@@ -4,10 +4,12 @@ name = "Healthcare AI Suite"
 version = "1.0.0"
 
 [domain.models]
-investigator = "claude-opus-4-6"
-orchestrator = "claude-opus-4-6"
-executor = "claude-sonnet-4-6"
-synthesizer = "claude-sonnet-4-6"
+# Logical roles — resolved at deployment time via provider config
+# Do not put model strings here. Use role names only.
+investigator = "capable"     # Complex reasoning, document analysis
+orchestrator = "capable"     # Planning + QA
+executor = "fast"            # Tool calls, structured output
+synthesizer = "fast"         # Final assembly
 
 [domain.mcp]
 server_module = "agent_harness.domains.has.mcp_server"

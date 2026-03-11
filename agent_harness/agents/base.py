@@ -1,17 +1,20 @@
 """Base agent configuration and class.
 
-Defines AgentConfig, the AGENT_MODELS registry, and BaseAgent which
-delegates prompt assembly to PromptBuilder.
+Defines AgentConfig, the AGENT_MODELS registry, logical role mapping,
+and BaseAgent which delegates prompt assembly to PromptBuilder.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import os as _os
 
 from agent_harness.prompt.builder import PromptBuilder
+
+if TYPE_CHECKING:
+    from agent_harness.core.provider_config import ProviderConfig
 
 
 @dataclass
@@ -45,6 +48,26 @@ AGENT_EFFORTS: dict[str, str] = {
     "lamponne": "medium",   # Executing a known plan
     "ravenna": "medium",    # Assembly, not reasoning
 }
+
+# Logical role mapping — agents use roles, provider config resolves to model strings.
+AGENT_ROLES: dict[str, str] = {
+    "santos": "capable",      # Planning + QA need strong reasoning
+    "medina": "capable",      # Injection scanning needs top-tier reasoning
+    "lamponne": "fast",       # Executing a known plan
+    "ravenna": "fast",        # Assembly, not reasoning
+}
+
+
+def resolve_agent_model(agent_name: str, provider: ProviderConfig | None = None) -> str:
+    """Resolve an agent's model string.
+
+    If provider config is given, resolves via logical roles.
+    Falls back to AGENT_MODELS for backward compatibility.
+    """
+    if provider is not None:
+        role = AGENT_ROLES[agent_name]
+        return provider.resolve_model(role)
+    return AGENT_MODELS[agent_name]
 
 
 class BaseAgent:

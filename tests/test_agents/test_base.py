@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 
-from agent_harness.agents.base import AgentConfig, AGENT_MODELS, BaseAgent
+from agent_harness.agents.base import (
+    AgentConfig,
+    AGENT_MODELS,
+    AGENT_ROLES,
+    BaseAgent,
+    resolve_agent_model,
+)
+from agent_harness.core.provider_config import GatewayType, ProviderConfig
 
 
 class TestAgentConfig:
@@ -58,6 +65,53 @@ class TestAgentModels:
 
     def test_ravenna_model(self):
         assert AGENT_MODELS["ravenna"] == "claude-sonnet-4-6"
+
+
+class TestAgentRoles:
+    """Tests for AGENT_ROLES mapping and resolve_agent_model."""
+
+    def test_has_all_four_agents(self):
+        assert set(AGENT_ROLES.keys()) == {"santos", "medina", "lamponne", "ravenna"}
+
+    def test_santos_is_capable(self):
+        assert AGENT_ROLES["santos"] == "capable"
+
+    def test_medina_is_capable(self):
+        assert AGENT_ROLES["medina"] == "capable"
+
+    def test_lamponne_is_fast(self):
+        assert AGENT_ROLES["lamponne"] == "fast"
+
+    def test_ravenna_is_fast(self):
+        assert AGENT_ROLES["ravenna"] == "fast"
+
+    def test_resolve_without_provider_falls_back(self):
+        result = resolve_agent_model("santos", None)
+        assert result == AGENT_MODELS["santos"]
+
+    def test_resolve_with_provider_uses_role(self):
+        provider = ProviderConfig(
+            name="test",
+            gateway=GatewayType.DIRECT,
+            base_url=None,
+            roles={"capable": "my-opus", "fast": "my-sonnet"},
+            auth_type="vertex",
+        )
+        assert resolve_agent_model("santos", provider) == "my-opus"
+        assert resolve_agent_model("lamponne", provider) == "my-sonnet"
+
+    def test_resolve_all_agents_with_provider(self):
+        provider = ProviderConfig(
+            name="test",
+            gateway=GatewayType.DIRECT,
+            base_url=None,
+            roles={"capable": "opus", "fast": "sonnet"},
+            auth_type="vertex",
+        )
+        assert resolve_agent_model("santos", provider) == "opus"
+        assert resolve_agent_model("medina", provider) == "opus"
+        assert resolve_agent_model("lamponne", provider) == "sonnet"
+        assert resolve_agent_model("ravenna", provider) == "sonnet"
 
 
 class TestBaseAgent:

@@ -2,13 +2,20 @@
 
 Wraps mem0 (self-hosted, pgvector) as the memory layer.
 Domain isolation enforced via user_id namespacing: {domain}:{operativo_id}.
+
+Supports provider-aware configuration for air-gapped deployments where
+mem0's LLM and embedder must point to local models.
 """
 from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from mem0 import Memory
+
+if TYPE_CHECKING:
+    from agent_harness.core.provider_config import MemoryConfig
 
 
 @dataclass
@@ -21,9 +28,16 @@ class Mem0Config:
     llm_model: str = "claude-haiku-4-5-20251001"
 
 
-def build_memory(config: Mem0Config) -> Memory:
-    """Build a mem0 Memory instance from config."""
-    mem_config: dict = {
+def build_memory(
+    config: Mem0Config,
+    memory_config: MemoryConfig | None = None,
+) -> Memory:
+    """Build a mem0 Memory instance from config.
+
+    If memory_config is provided (from ProviderConfig.memory), it overrides
+    the LLM and embedder settings for air-gapped deployments.
+    """
+    mem_cfg: dict = {
         "vector_store": {
             "provider": "pgvector",
             "config": {
@@ -32,15 +46,35 @@ def build_memory(config: Mem0Config) -> Memory:
             },
         },
     }
-    if config.anthropic_api_key:
-        mem_config["llm"] = {
+
+    if memory_config is not None:
+        # Provider-aware config — use settings from provider profile
+        llm_cfg: dict = {
+            "provider": memory_config.llm_provider,
+            "config": {"model": memory_config.llm_model},
+        }
+        if memory_config.llm_base_url:
+            llm_cfg["config"]["api_base"] = memory_config.llm_base_url
+        mem_cfg["llm"] = llm_cfg
+
+        embedder_cfg: dict = {
+            "provider": memory_config.embedder_provider,
+            "config": {"model": memory_config.embedder_model},
+        }
+        if memory_config.embedder_base_url:
+            embedder_cfg["config"]["api_base"] = memory_config.embedder_base_url
+        mem_cfg["embedder"] = embedder_cfg
+    elif config.anthropic_api_key:
+        # Legacy path — Anthropic API key provided directly
+        mem_cfg["llm"] = {
             "provider": "anthropic",
             "config": {
                 "model": config.llm_model,
                 "api_key": config.anthropic_api_key,
             },
         }
-    return Memory.from_config(mem_config)
+
+    return Memory.from_config(mem_cfg)
 
 
 class Mem0DomainMemory:

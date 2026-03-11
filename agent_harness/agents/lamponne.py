@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS
+from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS, resolve_agent_model
 from agent_harness.llm.client import AnthropicClient
 from agent_harness.llm.tool_handler import ToolHandler
 
@@ -64,10 +64,10 @@ class LamponneExecutor:
     according to the plan provided by Santos.
     """
 
-    def __init__(self, domain: str, max_turns: int = 10) -> None:
+    def __init__(self, domain: str, max_turns: int = 10, provider=None) -> None:
         self.config = AgentConfig(
             name="lamponne",
-            model=AGENT_MODELS["lamponne"],
+            model=resolve_agent_model("lamponne", provider),
             system_identity=LAMPONNE_SYSTEM_IDENTITY,
             domain=domain,
             max_turns=max_turns,

@@ -1,0 +1,25 @@
+model_list:
+  - model_name: simuladores-capable
+    litellm_params:
+      model: anthropic/claude-opus-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: simuladores-fast
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: simuladores-extract
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+litellm_settings:
+  drop_params: true
+  fallbacks:
+    - simuladores-capable: ["simuladores-fast"]
+
+router_settings:
+  routing_strategy: "least-busy"
+  num_retries: 3
+  timeout: 60

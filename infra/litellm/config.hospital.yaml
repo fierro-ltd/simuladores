@@ -1,0 +1,29 @@
+model_list:
+  - model_name: simuladores-capable
+    litellm_params:
+      model: openai/mistral-large-2407
+      api_base: http://vllm-server:8000/v1
+      api_key: "not-required"
+
+  - model_name: simuladores-fast
+    litellm_params:
+      model: openai/mistral-small-2409
+      api_base: http://vllm-server:8000/v1
+      api_key: "not-required"
+
+  - model_name: simuladores-extract
+    litellm_params:
+      model: openai/qwen2.5-7b-instruct
+      api_base: http://vllm-server:8000/v1
+      api_key: "not-required"
+
+  - model_name: simuladores-local
+    litellm_params:
+      model: openai/mistral-large-2407
+      api_base: http://vllm-server:8000/v1
+      api_key: "not-required"
+
+litellm_settings:
+  drop_params: true
+  success_callback: []
+  failure_callback: []

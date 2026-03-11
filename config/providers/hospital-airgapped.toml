@@ -1,0 +1,22 @@
+[provider]
+name = "hospital-airgapped"
+description = "Fully local inference via vLLM on hospital GPU cluster"
+gateway = "litellm"
+base_url = "http://litellm-proxy:4000"
+
+[roles]
+capable = "simuladores-capable"
+fast    = "simuladores-fast"
+extract = "simuladores-extract"
+local   = "simuladores-local"
+
+[auth]
+type = "api_key"
+
+[memory]
+llm_provider = "ollama"
+llm_model = "qwen2.5:7b"
+llm_base_url = "http://ollama-server:11434"
+embedder_provider = "ollama"
+embedder_model = "nomic-embed-text"
+embedder_base_url = "http://ollama-server:11434"

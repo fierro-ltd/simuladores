@@ -1,0 +1,23 @@
+model_list:
+  - model_name: simuladores-capable
+    litellm_params:
+      model: ollama/llama4:scout
+      api_base: http://localhost:11434
+
+  - model_name: simuladores-fast
+    litellm_params:
+      model: ollama/mistral-small3.1
+      api_base: http://localhost:11434
+
+  - model_name: simuladores-extract
+    litellm_params:
+      model: ollama/qwen2.5:7b
+      api_base: http://localhost:11434
+
+  - model_name: simuladores-local
+    litellm_params:
+      model: ollama/llama4:scout
+      api_base: http://localhost:11434
+
+litellm_settings:
+  drop_params: true

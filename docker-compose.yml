@@ -32,6 +32,22 @@ services:
     depends_on:
       - temporal
 
+  litellm-proxy:
+    image: ghcr.io/berriai/litellm:main-latest
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./infra/litellm/config.yaml:/app/config.yaml
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LITELLM_MASTER_KEY=${LITELLM_API_KEY:-sk-simuladores}
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   worker:
     build: .
     command: python -m agent_harness.workers.dce
@@ -39,6 +55,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       TEMPORAL_ADDRESS: temporal:7233
       STORAGE_ROOT: /data
+      SIMULADORES_PROVIDER_PROFILE: ${SIMULADORES_PROVIDER_PROFILE:-anthropic-vertex}
     depends_on:
       - temporal
     volumes:
@@ -52,6 +69,7 @@ services:
       - "8000:8000"
     environment:
       TEMPORAL_ADDRESS: temporal:7233
+      SIMULADORES_PROVIDER_PROFILE: ${SIMULADORES_PROVIDER_PROFILE:-anthropic-vertex}
     depends_on:
       - temporal
     restart: unless-stopped

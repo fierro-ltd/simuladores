@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS
+from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS, resolve_agent_model
 from agent_harness.llm.client import AnthropicClient
 from agent_harness.llm.tool_handler import ToolHandler
 
@@ -92,10 +92,10 @@ class RavennaSynthesizer:
     permissions, and writes the final structured_result.json.
     """
 
-    def __init__(self, domain: str) -> None:
+    def __init__(self, domain: str, provider=None) -> None:
         self.config = AgentConfig(
             name="ravenna",
-            model=AGENT_MODELS["ravenna"],
+            model=resolve_agent_model("ravenna", provider),
             system_identity=RAVENNA_SYSTEM_IDENTITY,
             domain=domain,
             reasoning_effort=AGENT_EFFORTS["ravenna"],

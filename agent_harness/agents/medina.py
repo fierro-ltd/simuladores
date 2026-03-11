@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS
+from agent_harness.agents.base import AGENT_EFFORTS, AgentConfig, BaseAgent, AGENT_MODELS, resolve_agent_model
 from agent_harness.activities.investigator import InputSnapshot
 from agent_harness.llm.client import AnthropicClient
 from agent_harness.llm.tool_handler import ToolHandler
@@ -72,10 +72,10 @@ class MedinaInvestigator:
     to run the investigation tool loop.
     """
 
-    def __init__(self, domain: str) -> None:
+    def __init__(self, domain: str, provider=None) -> None:
         self.config = AgentConfig(
             name="medina",
-            model=AGENT_MODELS["medina"],
+            model=resolve_agent_model("medina", provider),
             system_identity=MEDINA_SYSTEM_IDENTITY,
             domain=domain,
             reasoning_effort=AGENT_EFFORTS["medina"],
