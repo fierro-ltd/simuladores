@@ -12,7 +12,6 @@ import json
 import logging
 import os
 import shutil
-import sys
 import time
 import uuid
 from dataclasses import asdict

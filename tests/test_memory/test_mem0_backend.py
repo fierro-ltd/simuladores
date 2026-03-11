@@ -1,7 +1,6 @@
 """Tests for mem0 memory backend adapter."""
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest

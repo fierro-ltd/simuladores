@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import instructor
-import pytest
 
 from agent_harness.llm.instructor_client import create_instructor_client
 

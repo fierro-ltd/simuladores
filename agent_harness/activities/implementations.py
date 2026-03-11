@@ -39,11 +39,6 @@ from agent_harness.memory.graph_store import InMemoryGraphStore
 from agent_harness.activities.qa_review import QAReviewInput, QAReviewOutput
 from agent_harness.activities.synthesizer import SynthesizerInput, SynthesizerOutput
 from agent_harness.activities.web_verify import WebVerifyInput, WebVerifyOutput
-from agent_harness.activities.vision_extract import (
-    VisionExtractInput,
-    VisionExtractOutput,
-    gemini_vision_extract,
-)
 from agent_harness.agents.base import AGENT_MODELS, AgentConfig, BaseAgent
 from agent_harness.agents.lamponne import LamponneExecutor
 from agent_harness.agents.medina import MedinaInvestigator

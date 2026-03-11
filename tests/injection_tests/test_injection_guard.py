@@ -3,10 +3,8 @@
 All synthetic poisoned content MUST be flagged. This is CI-critical.
 """
 
-import pytest
 
 from agent_harness.prompt.injection_guard import (
-    InjectionResult,
     InjectionRisk,
     scan_content,
 )

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import re
-from functools import partial
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

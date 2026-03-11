@@ -4,7 +4,7 @@ import pytest
 
 from agent_harness.activities.callback import CallbackInput, CallbackOutput
 from agent_harness.core.operativo import OperativoStatus
-from agent_harness.domains.dce.operativo import CPCOperativoInput, CPCOperativoOutput
+from agent_harness.domains.dce.operativo import CPCOperativoOutput
 from agent_harness.workflows.operativo_workflow import CPCOperativoWorkflow
 
 

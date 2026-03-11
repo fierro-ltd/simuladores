@@ -1042,7 +1042,7 @@ async def load_domain_memory(backend: StorageBackend, domain: str) -> str:
 # Memory recall and bulletin store factories
 # ---------------------------------------------------------------------------
 
-def get_memory_recall() -> "MemoryRecall":
+def get_memory_recall():
     """Get or create singleton MemoryRecall with InMemoryGraphStore.
 
     Production: replace with PostgresGraphStore connected to pgvector.
@@ -1061,11 +1061,11 @@ def get_memory_recall() -> "MemoryRecall":
 
 
 # Module-level singleton for bulletin store (shared across activities in one worker)
-_bulletin_store_instance: "InMemoryBulletinStore | None" = None
-_memory_recall_instance: "MemoryRecall | None" = None
+_bulletin_store_instance = None
+_memory_recall_instance = None
 
 
-def get_bulletin_store() -> "InMemoryBulletinStore":
+def get_bulletin_store():
     """Get or create singleton bulletin store.
 
     Returns the same InMemoryBulletinStore instance across calls within

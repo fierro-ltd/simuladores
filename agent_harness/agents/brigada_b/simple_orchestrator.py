@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agent_harness.agents.base import BaseAgent, AgentConfig, AGENT_MODELS
 
 
 SIMPLE_ORCHESTRATOR_IDENTITY = """You are a SimpleOrchestrator from Brigada B.

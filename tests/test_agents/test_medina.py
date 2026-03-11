@@ -1,6 +1,5 @@
 """Tests for Medina investigator agent."""
 
-import pytest
 
 from agent_harness.agents.medina import (
     MEDINA_SYSTEM_IDENTITY,

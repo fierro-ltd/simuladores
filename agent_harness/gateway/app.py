@@ -294,7 +294,6 @@ def create_app() -> FastAPI:
                 timeout=1.0,
             )
         except Exception:
-            from fastapi.responses import JSONResponse
             raise HTTPException(status_code=503, detail="Temporal unavailable")
         return {"status": "ready"}
 

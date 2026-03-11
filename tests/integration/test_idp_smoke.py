@@ -1,9 +1,7 @@
 """Smoke test: IDP domain can dispatch, build workflow input, and construct tool handler."""
 
-import pytest
 from unittest.mock import MagicMock
 
-from agent_harness.domains.idp.operativo import IdpOperativoInput, IdpOperativoOutput
 from agent_harness.domains.idp.tools import discover_api, list_operations, get_operation_schema
 from agent_harness.gateway.dispatch import dispatch_idp_operativo
 from agent_harness.activities.factory import build_tool_handler

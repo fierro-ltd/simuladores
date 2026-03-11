@@ -7,7 +7,7 @@ from datetime import timedelta
 from temporalio import workflow
 
 with workflow.unsafe.imports_passed_through():
-    from agent_harness.core.feedback import FeedbackAction, OperativoFeedback
+    from agent_harness.core.feedback import FeedbackAction
 
 
 @dataclass

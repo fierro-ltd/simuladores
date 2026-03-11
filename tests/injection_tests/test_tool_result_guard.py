@@ -1,8 +1,7 @@
 """Tests for tool result sanitization guard."""
 
-import pytest
 
-from agent_harness.prompt.tool_result_guard import SanitizedResult, sanitize_tool_result
+from agent_harness.prompt.tool_result_guard import sanitize_tool_result
 
 
 class TestCleanPassthrough:

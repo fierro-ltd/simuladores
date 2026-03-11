@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,7 +27,7 @@ from agent_harness.activities.post_job import PostJobInput, PostJobOutput
 from agent_harness.activities.qa_review import QAReviewInput, QAReviewOutput
 from agent_harness.activities.synthesizer import SynthesizerInput, SynthesizerOutput
 from agent_harness.activities.web_verify import WebVerifyInput, WebVerifyOutput
-from agent_harness.core.operativo import Phase, Severity
+from agent_harness.core.operativo import Severity
 from agent_harness.core.plan import AgentTask, ExecutionPlan
 from agent_harness.agents.qa_reviewer import QACheck, QAReport
 

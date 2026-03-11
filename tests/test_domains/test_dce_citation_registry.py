@@ -1,6 +1,5 @@
 """Tests for DCE citation registry and completeness checker."""
 
-import pytest
 
 from agent_harness.domains.dce import (
     CPC_CITATION_REGISTRY,

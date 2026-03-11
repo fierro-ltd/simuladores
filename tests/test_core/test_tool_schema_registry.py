@@ -3,7 +3,7 @@
 import pytest
 from fastmcp import FastMCP, Client
 
-from agent_harness.core.tool_schema_registry import SchemaChangeEvent, ToolSchemaRegistry
+from agent_harness.core.tool_schema_registry import ToolSchemaRegistry
 
 
 def _make_server() -> FastMCP:

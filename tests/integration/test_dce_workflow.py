@@ -1,6 +1,5 @@
 """Tests for DCEWorkflow."""
 
-import pytest
 
 from agent_harness.workflows.operativo_workflow import (
     E2E_FAST_WORKFLOW_CONFIG,

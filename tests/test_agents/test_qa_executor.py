@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from agent_harness.agents.qa_reviewer import (
-    QACheck,
     QAReport,
     SantosQAReviewer,
     _parse_qa_json,

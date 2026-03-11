@@ -3,7 +3,6 @@
 import os
 import tempfile
 
-import pytest
 
 from agent_harness.sandbox.docker_backend import _build_docker_args
 from agent_harness.sandbox.python_runner import SandboxRequest

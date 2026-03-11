@@ -1,6 +1,5 @@
 """Tests for DCE tools manifest."""
 
-import pytest
 
 from agent_harness.domains.dce.tools import (
     CPC_MANIFEST,

@@ -1,6 +1,5 @@
 """Tests for IdpWorkflow."""
 
-import pytest
 
 from agent_harness.workflows.idp_workflow import (
     IdpWorkflow,
