@@ -76,6 +76,17 @@ class TestLoadHospitalAirgapped:
         assert cfg.roles["fast"] == "simuladores-fast"
 
 
+class TestLoadLocalOllama:
+    def test_loads_successfully(self):
+        cfg = load_provider_config("local-ollama")
+        assert cfg.name == "local-ollama"
+        assert cfg.gateway is GatewayType.LITELLM
+        assert cfg.base_url == "http://localhost:4000"
+        assert cfg.auth_type == "api_key"
+        assert cfg.roles["capable"] == "simuladores-capable"
+        assert cfg.roles["fast"] == "simuladores-fast"
+
+
 # ---------------------------------------------------------------------------
 # resolve_model
 # ---------------------------------------------------------------------------
